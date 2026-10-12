@@ -1,0 +1,12 @@
+node_modules/
+.npm-cache/
+.electron-cache/
+dist/
+release/
+data/*.sqlite*
+data/manifest.json
+data/import-report.json
+public/assets/
+.qa/
+__pycache__/
+*.log

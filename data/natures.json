@@ -1,0 +1,202 @@
+[
+  {
+    "id": 1,
+    "identifier": "hardy",
+    "name": "勤奋",
+    "english": "Hardy",
+    "decreased": 2,
+    "increased": 2
+  },
+  {
+    "id": 2,
+    "identifier": "bold",
+    "name": "大胆",
+    "english": "Bold",
+    "decreased": 2,
+    "increased": 3
+  },
+  {
+    "id": 3,
+    "identifier": "modest",
+    "name": "内敛",
+    "english": "Modest",
+    "decreased": 2,
+    "increased": 4
+  },
+  {
+    "id": 4,
+    "identifier": "calm",
+    "name": "温和",
+    "english": "Calm",
+    "decreased": 2,
+    "increased": 5
+  },
+  {
+    "id": 5,
+    "identifier": "timid",
+    "name": "胆小",
+    "english": "Timid",
+    "decreased": 2,
+    "increased": 6
+  },
+  {
+    "id": 6,
+    "identifier": "lonely",
+    "name": "怕寂寞",
+    "english": "Lonely",
+    "decreased": 3,
+    "increased": 2
+  },
+  {
+    "id": 7,
+    "identifier": "docile",
+    "name": "坦率",
+    "english": "Docile",
+    "decreased": 3,
+    "increased": 3
+  },
+  {
+    "id": 8,
+    "identifier": "mild",
+    "name": "慢吞吞",
+    "english": "Mild",
+    "decreased": 3,
+    "increased": 4
+  },
+  {
+    "id": 9,
+    "identifier": "gentle",
+    "name": "温顺",
+    "english": "Gentle",
+    "decreased": 3,
+    "increased": 5
+  },
+  {
+    "id": 10,
+    "identifier": "hasty",
+    "name": "急躁",
+    "english": "Hasty",
+    "decreased": 3,
+    "increased": 6
+  },
+  {
+    "id": 11,
+    "identifier": "adamant",
+    "name": "固执",
+    "english": "Adamant",
+    "decreased": 4,
+    "increased": 2
+  },
+  {
+    "id": 12,
+    "identifier": "impish",
+    "name": "淘气",
+    "english": "Impish",
+    "decreased": 4,
+    "increased": 3
+  },
+  {
+    "id": 13,
+    "identifier": "bashful",
+    "name": "害羞",
+    "english": "Bashful",
+    "decreased": 4,
+    "increased": 4
+  },
+  {
+    "id": 14,
+    "identifier": "careful",
+    "name": "慎重",
+    "english": "Careful",
+    "decreased": 4,
+    "increased": 5
+  },
+  {
+    "id": 15,
+    "identifier": "rash",
+    "name": "马虎",
+    "english": "Rash",
+    "decreased": 5,
+    "increased": 4
+  },
+  {
+    "id": 16,
+    "identifier": "jolly",
+    "name": "爽朗",
+    "english": "Jolly",
+    "decreased": 4,
+    "increased": 6
+  },
+  {
+    "id": 17,
+    "identifier": "naughty",
+    "name": "顽皮",
+    "english": "Naughty",
+    "decreased": 5,
+    "increased": 2
+  },
+  {
+    "id": 18,
+    "identifier": "lax",
+    "name": "乐天",
+    "english": "Lax",
+    "decreased": 5,
+    "increased": 3
+  },
+  {
+    "id": 19,
+    "identifier": "quirky",
+    "name": "浮躁",
+    "english": "Quirky",
+    "decreased": 5,
+    "increased": 5
+  },
+  {
+    "id": 20,
+    "identifier": "naive",
+    "name": "天真",
+    "english": "Naive",
+    "decreased": 5,
+    "increased": 6
+  },
+  {
+    "id": 21,
+    "identifier": "brave",
+    "name": "勇敢",
+    "english": "Brave",
+    "decreased": 6,
+    "increased": 2
+  },
+  {
+    "id": 22,
+    "identifier": "relaxed",
+    "name": "悠闲",
+    "english": "Relaxed",
+    "decreased": 6,
+    "increased": 3
+  },
+  {
+    "id": 23,
+    "identifier": "quiet",
+    "name": "冷静",
+    "english": "Quiet",
+    "decreased": 6,
+    "increased": 4
+  },
+  {
+    "id": 24,
+    "identifier": "sassy",
+    "name": "自大",
+    "english": "Sassy",
+    "decreased": 6,
+    "increased": 5
+  },
+  {
+    "id": 25,
+    "identifier": "serious",
+    "name": "认真",
+    "english": "Serious",
+    "decreased": 6,
+    "increased": 6
+  }
+]

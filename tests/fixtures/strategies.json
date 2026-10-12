@@ -1,0 +1,32 @@
+{
+  "Charizard": {
+    "pu": {
+      "Sun Wallbreaker": {
+        "moves": ["Weather Ball", "Solar Beam", ["Focus Blast", "Scorching Sands"], ["Flamethrower", "Fire Blast"]],
+        "ability": "Solar Power", "item": ["Choice Specs", "Heavy-Duty Boots"], "nature": "Timid",
+        "evs": { "def": 4, "spa": 252, "spe": 252 }, "teratypes": "Fire"
+      }
+    },
+    "nationaldexdoubles": {
+      "Sun Attacker": {
+        "moves": ["Heat Wave", ["Scorching Sands", "Weather Ball", "Overheat"], "Tailwind", "Protect"],
+        "ability": "Drought", "item": "Charizardite Y", "nature": ["Timid", "Modest"], "ivs": { "atk": 0 },
+        "evs": [{ "spa": 252, "spd": 4, "spe": 252 }, { "hp": 192, "spa": 28, "spd": 36, "spe": 252 }], "teratypes": "Fire"
+      }
+    }
+  },
+  "Garchomp": {
+    "ou": {
+      "TankChomp": {
+        "moves": ["Earthquake", "Dragon Tail", "Stealth Rock", "Spikes"], "ability": "Rough Skin", "item": "Rocky Helmet",
+        "nature": "Impish", "evs": { "hp": 252, "def": 216, "spe": 40 }, "teratypes": ["Ghost", "Steel"]
+      }
+    },
+    "almostanyability": {
+      "Entry Hazard Setter": {
+        "moves": ["Spikes", "Draco Meteor", "Earthquake", "Fire Blast"], "ability": "Adaptability", "item": "Life Orb",
+        "nature": "Naive", "evs": { "atk": 4, "spa": 252, "spe": 252 }
+      }
+    }
+  }
+}

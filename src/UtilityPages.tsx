@@ -1,0 +1,48 @@
+import { useEffect, useState } from 'react';
+import { Check, Database, Keyboard, Layers, Moon, Search, ShieldCheck, Sun, Type as TypeIcon, Zap } from 'lucide-react';
+import type { Bootstrap, Effectiveness, Pokemon, Settings, UserState } from './types';
+import { EmptyState, PokemonImage, SectionTitle, TypeChip } from './components';
+import { MatchupGrid } from './PokemonPanel';
+import BackupPanel from './BackupPanel';
+
+export function MatchupPage({ data, catalog, user, onError }: { data: Bootstrap; catalog: Pokemon[]; user: UserState; onError: (message: string) => void }) {
+  const version = data.versions.find(v => v.id === user.settings.versionId)!;
+  const [selected, setSelected] = useState<number[]>([10, 3]);
+  const [result, setResult] = useState<Effectiveness[]>([]);
+  const [query, setQuery] = useState('');
+  const [pokemonId, setPokemonId] = useState<number | null>(6);
+  const available = data.types.filter(type => type.generation <= version.generation);
+  useEffect(() => { setSelected(values => values.filter(id => available.some(type => type.id === id))); }, [version.id]);
+  useEffect(() => {
+    let live = true;
+    if (selected.length) window.pokedex.query<Effectiveness[]>('matchup', { types: selected, versionId: version.id }).then(value => { if (live) setResult(value); }).catch(err => { if (live) onError(err.message); });
+    else setResult([]);
+    return () => { live = false; };
+  }, [selected.join(','), version.id]);
+  const candidates = catalog.filter(p => p.isDefault && (!query || p.searchKey.includes(query.toLowerCase().replace(/\s/g, '')) || String(p.speciesId) === query)).slice(0, 6);
+  const choose = (pokemon: Pokemon) => { setSelected(pokemon.types); setPokemonId(pokemon.id); };
+  const toggle = (id: number) => { setPokemonId(null); setSelected(values => values.includes(id) ? values.filter(v => v !== id) : values.length === 2 ? [values[0], id] : [...values, id]); };
+  const pokemon = catalog.find(p => p.id === pokemonId);
+  return <div className="utility-page"><div className="page-heading"><div><span className="eyebrow">对战速查</span><h1>属性克制</h1><p>选出对手的属性，看看用什么属性攻击效果更好。</p></div><div className="heading-symbol"><ShieldCheck size={29} /></div></div>
+    <div className="matchup-layout"><section className="utility-card type-selector"><SectionTitle title="对手的防御属性" right={<span className="small-label">最多选择两种</span>} /><div className="selected-types">{selected.length ? selected.map(id => <TypeChip key={id} id={id} types={data.types} />) : <span className="muted">选择下方属性开始查询</span>}</div><div className="type-picker">{available.map(type => <button key={type.id} className={selected.includes(type.id) ? 'active' : ''} aria-pressed={selected.includes(type.id)} onClick={() => toggle(type.id)}><TypeChip id={type.id} types={data.types} />{selected.includes(type.id) && <Check size={13} />}</button>)}</div>
+      <div className="pick-pokemon"><SectionTitle title="也可以直接选宝可梦" /><div className="dictionary-search"><Search size={16} /><input aria-label="克制工具搜索宝可梦" placeholder="搜索中文名、拼音或编号…" value={query} onChange={event => setQuery(event.target.value)} /></div><div className="preset-pokemon">{candidates.map(poke => <button key={poke.id} className={poke.id === pokemonId ? 'active' : ''} onClick={() => choose(poke)}><PokemonImage pokemon={poke} settings={user.settings} thumbnail /><span>{poke.name}</span></button>)}</div></div>
+    </section><section className="utility-card matchup-result"><SectionTitle title={pokemon ? `${pokemon.name}的属性克制` : '防御倍率'} right={<span className="small-label">第 {version.generation} 世代</span>} />{result.length ? <><MatchupGrid entries={result} types={data.types} /><div className="neutral-types"><h3>普通效果 · ×1</h3><div>{result.filter(entry => entry.multiplier === 1).map(entry => <TypeChip key={entry.id} id={entry.id} types={data.types} small />)}</div></div><div className="notice"><ShieldCheck size={16} /><span>这里显示属性组合的基础倍率。储水、飘浮等特性以及战斗状态可能改变实际结果。</span></div></> : <EmptyState title="选择一种防御属性" description="双属性的倍率会相乘，也会考虑当前世代的属性规则。" />}</section></div>
+  </div>;
+}
+
+export function SettingsPage({ data, user, save, onError }: { data: Bootstrap; user: UserState; save: (patch: Partial<Settings>) => Promise<void>; onError: (message: string) => void }) {
+  const [shortcut, setShortcut] = useState(user.settings.shortcut);
+  const [saved, setSaved] = useState(false);
+  useEffect(() => { setShortcut(user.settings.shortcut); }, [user.settings.shortcut]);
+  const updateShortcut = async () => { try { await save({ shortcut }); setSaved(true); setTimeout(() => setSaved(false), 2000); } catch (error) { onError((error as Error).message); } };
+  return <div className="utility-page settings-page"><div className="page-heading"><div><span className="eyebrow">按照你的习惯</span><h1>设置</h1><p>选好资料规则，让图鉴陪你完成下一段冒险。</p></div><span className="version-label">桌面版 0.1.1</span></div>
+    <div className="settings-grid">
+      <section className="utility-card typography-card"><SectionTitle title="字体与界面大小" right={<TypeIcon size={21} />} /><p className="settings-description">文字、按钮和图标一起放大，完整窗口和迷你图鉴同步调整。选择后立即生效，重开程序也会保留。</p><label className="display-scale-label" htmlFor="display-scale">界面缩放</label><select id="display-scale" className="wide-select" aria-label="界面缩放" value={user.settings.uiScale} onChange={event => void save({ uiScale: Number(event.target.value) }).catch(error => onError(error.message))}><option value={100}>100% · 标准</option><option value={125}>125% · 舒适（默认）</option><option value={150}>150% · 大字</option><option value={175}>175% · 特大</option><option value={200}>200% · 最大</option></select><div className="typography-preview"><strong>喷火龙 · 火 / 飞行</strong><p>岩石属性攻击造成 4 倍伤害。</p><span>进化条件、招式说明和备注也会一起放大。</span></div><button className="secondary-button" disabled={user.settings.uiScale === 125} onClick={() => void save({ uiScale: 125 }).catch(error => onError(error.message))}>恢复推荐大小 · 125%</button></section>
+      <section className="utility-card"><SectionTitle title="资料规则" right={<Layers size={19} />} /><p className="settings-description">选择游戏对应的官方规则。属性、历史种族值和学习表会随版本切换。</p><select className="wide-select" aria-label="设置中的官方规则版本" value={user.settings.versionId} onChange={event => void save({ versionId: Number(event.target.value) }).catch(error => onError(error.message))}>{data.versions.map(version => <option key={version.id} value={version.id}>{version.name} · 第 {version.generation} 世代</option>)}</select><div className="gba-presets">{[{ id: 5, label: '红宝石／蓝宝石' }, { id: 6, label: '绿宝石' }, { id: 7, label: '火红／叶绿' }].map(version => <button key={version.id} className={version.id === user.settings.versionId ? 'active' : ''} onClick={() => void save({ versionId: version.id }).catch(error => onError(error.message))}><span>GBA</span>{version.label}</button>)}</div><p className="section-footnote">资料未收录的学习表会显示缺失提示；引用其他版本的说明会标明来源。</p></section>
+      <section className="utility-card"><SectionTitle title="外观与图片" right={<Sun size={19} />} /><div className="theme-options">{(['light', 'dark'] as const).map(theme => <button key={theme} className={user.settings.theme === theme ? 'active' : ''} onClick={() => void save({ theme }).catch(error => onError(error.message))}><div className={`theme-preview ${theme}`}><i /><span /><span /><b /></div><span>{theme === 'light' ? <Sun size={14} /> : <Moon size={14} />}{theme === 'light' ? '浅色 · 日间' : '深色 · 夜间'}{user.settings.theme === theme && <Check size={14} />}</span></button>)}</div><div className="setting-row"><div><strong>详情图片</strong><p>像素图模式下，第三世代优先使用 GBA 图片。</p></div><select aria-label="详情图片风格" value={user.settings.imageStyle} onChange={event => void save({ imageStyle: event.target.value as Settings['imageStyle'] }).catch(error => onError(error.message))}><option value="artwork">宝可梦插画</option><option value="sprite">游戏像素图</option></select></div></section>
+      <section className="utility-card"><SectionTitle title="桌面查询" right={<Keyboard size={19} />} /><div className="setting-row"><div><strong>完整窗口置顶</strong><p>窗口保持在其他普通窗口上方。</p></div><button className={`toggle-switch ${user.settings.keepOnTop ? 'on' : ''}`} role="switch" aria-checked={user.settings.keepOnTop} aria-label="完整窗口置顶" onClick={() => void save({ keepOnTop: !user.settings.keepOnTop }).catch(error => onError(error.message))}><i /></button></div><label className="shortcut-setting"><span>呼出／收起迷你图鉴</span><div><input aria-label="迷你图鉴全局快捷键" value={shortcut} onChange={event => setShortcut(event.target.value)} placeholder="Ctrl+Alt+P" /><button className="primary-button" onClick={() => void updateShortcut()}>{saved ? <><Check size={14} />已应用</> : '应用'}</button></div></label>{user.shortcutAvailable === false && <div className="notice">当前快捷键已被其他程序占用，请设置另一个组合。也可以通过顶部的“迷你图鉴”按钮打开。</div>}<div className="keyboard-hints"><span><kbd>Ctrl</kbd> + <kbd>K</kbd> 聚焦搜索</span><span><kbd>↑</kbd> <kbd>↓</kbd> 切换搜索结果</span><span><kbd>Esc</kbd> 关闭资料弹窗</span></div></section>
+      <section className="utility-card data-card"><SectionTitle title="本地资料包" right={<Database size={19} />} /><div className="data-ready"><span className="status-dot" /><strong>已就绪，可以离线查询</strong></div><div className="data-counts"><div><b>{data.manifest.speciesCount.toLocaleString()}</b><span>宝可梦</span></div><div><b>{data.manifest.moveCount.toLocaleString()}</b><span>招式</span></div><div><b>{data.manifest.imageCounts.artwork.toLocaleString()}</b><span>宝可梦插画</span></div></div><p>资料来源：PokéAPI / PokeAPI sprites</p><p>整理时间：{new Date(data.manifest.importedAt).toLocaleDateString('zh-CN')}</p><p className="section-footnote">收藏、历史和笔记单独保存在本机，更新图鉴资料不会覆盖它们。</p></section>
+      <BackupPanel />
+    </div><div className="settings-bottom"><Zap size={14} /><span>为 PC 上的每一段宝可梦冒险准备。</span></div>
+  </div>;
+}
