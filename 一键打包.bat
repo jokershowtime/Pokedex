@@ -69,10 +69,10 @@ echo [3/4] 编译界面并打包 Windows x64 程序...
 call npm.cmd run package --cache ".npm-cache"
 if errorlevel 1 goto failed
 
-@REM  set "package_step=生成版本 ZIP"
-@REM  echo [4/4] 压缩完整成品目录，生成带版本号的 ZIP...
-@REM  powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%~dp0scripts\compress-release.ps1"
-@REM  if errorlevel 1 goto failed
+set "package_step=生成版本 ZIP"
+echo [4/4] 压缩完整成品目录，生成带版本号的 ZIP...
+powershell.exe -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%~dp0scripts\compress-release.ps1"
+if errorlevel 1 goto failed
 
 echo.
 echo [完成] 成品程序："%cd%\release\Pokedex-win32-x64\Pokedex.exe"
