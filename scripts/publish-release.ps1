@@ -4,8 +4,8 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $currentVersion = $null
 $versionUpdateStarted = $false
-$versionCommitCreated = $false
-$mainPushSucceeded = $false
+$releaseTagCreated = $false
+$releaseTagPushed = $false
 $exitCode = 1
 
 function Invoke-CheckedCommand {
@@ -150,7 +150,7 @@ try {
     Write-Host '说明：'
     Write-Host $notes
     if ($targetVersion -ne $currentVersion) {
-        Write-Host "确认后会更新应用版本并将版本提交推送到 main（$currentVersion → $targetVersion）。"
+        Write-Host "确认后会将应用版本更新为 $targetVersion，并只把版本快照推送到标签 $tag；main 分支保持不变。"
     }
     $confirmation = Read-Host '确认后输入 PUBLISH 开始构建和上传'
     if ($confirmation -cne 'PUBLISH') {
@@ -185,18 +185,28 @@ try {
     if ($archive.Length -lt 1) { throw '发行 ZIP 文件为空。' }
     if ($archive.Length -ge 2GB) { throw '发行 ZIP 达到或超过 GitHub Release 的单文件大小限制 2 GiB。' }
 
+    $releaseParent = (& $gitCommand.Source rev-parse HEAD).Trim()
+    if ($LASTEXITCODE -ne 0) { throw '无法读取发布提交编号。' }
+    $releaseCommit = $releaseParent
     if ($targetVersion -ne $currentVersion) {
-        Invoke-CheckedCommand -FilePath $gitCommand.Source -Arguments @('add', '--', 'package.json', 'package-lock.json') -Description '暂存版本号变更'
-        Invoke-CheckedCommand -FilePath $gitCommand.Source -Arguments @('commit', '-m', "chore: release $tag") -Description '提交发布版本号'
-        $versionCommitCreated = $true
+        Invoke-CheckedCommand -FilePath $gitCommand.Source -Arguments @('add', '--', 'package.json', 'package-lock.json') -Description '暂存版本号快照'
+        $releaseTree = (& $gitCommand.Source write-tree).Trim()
+        if ($LASTEXITCODE -ne 0) { throw '无法生成发布版本快照。' }
+        $releaseCommit = (& $gitCommand.Source commit-tree $releaseTree -p $releaseParent -m "chore: release $tag").Trim()
+        if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($releaseCommit)) { throw '无法创建发布标签对应的版本快照。' }
+        Invoke-CheckedCommand -FilePath $gitCommand.Source -Arguments @('restore', '--source=HEAD', '--staged', '--worktree', '--', 'package.json', 'package-lock.json') -Description '恢复 main 工作区版本号'
     }
 
-    $releaseCommit = (& $gitCommand.Source rev-parse HEAD).Trim()
-    if ($LASTEXITCODE -ne 0) { throw '无法读取发布提交编号。' }
-    Invoke-CheckedCommand -FilePath $gitCommand.Source -Arguments @('push', 'origin', 'main') -Description '推送 main 分支'
-    $mainPushSucceeded = $true
+    $statusAfterRestore = @(& $gitCommand.Source status --porcelain --untracked-files=normal)
+    if ($LASTEXITCODE -ne 0) { throw '无法确认 main 工作区状态。' }
+    if ($statusAfterRestore.Count -gt 0) { throw '版本快照生成后工作区仍有更改；为避免影响 main，已停止发布。' }
 
-    $releaseArguments = @('release', 'create', $tag, $archivePath, '--repo', $repository, '--title', $title, '--notes', $notes, '--target', $releaseCommit)
+    Invoke-CheckedCommand -FilePath $gitCommand.Source -Arguments @('tag', '-a', $tag, $releaseCommit, '-m', "Release $tag") -Description '创建本地版本标签'
+    $releaseTagCreated = $true
+    Invoke-CheckedCommand -FilePath $gitCommand.Source -Arguments @('push', 'origin', "refs/tags/$tag") -Description '推送版本标签'
+    $releaseTagPushed = $true
+
+    $releaseArguments = @('release', 'create', $tag, $archivePath, '--repo', $repository, '--title', $title, '--notes', $notes, '--verify-tag')
     if ($isPrerelease) { $releaseArguments += '--prerelease' }
     if ($isDraft) { $releaseArguments += '--draft' }
     Invoke-CheckedCommand -FilePath $ghCommand.Source -Arguments $releaseArguments -Description '创建 GitHub Release 并上传 ZIP'
@@ -213,21 +223,23 @@ try {
     $exitCode = 0
 } catch {
     Write-Host "[ERROR] $($_.Exception.Message)" -ForegroundColor Red
-    if ($versionUpdateStarted -and -not $versionCommitCreated -and $currentVersion) {
+    if ($releaseTagCreated -and -not $releaseTagPushed) {
         try {
-            $package = Get-Content -LiteralPath (Join-Path $projectRoot 'package.json') -Encoding UTF8 -Raw | ConvertFrom-Json
-            if ([string]$package.version -ne $currentVersion) {
-                Invoke-CheckedCommand -FilePath (Get-Command npm.cmd).Source -Arguments @('version', $currentVersion, '--no-git-tag-version', '--ignore-scripts') -Description '恢复原应用版本'
-                Write-Host "已恢复 package.json 和 package-lock.json 的版本 $currentVersion。" -ForegroundColor Yellow
-            }
+            Invoke-CheckedCommand -FilePath (Get-Command git.exe).Source -Arguments @('tag', '-d', $tag) -Description '删除未推送的本地发布标签'
+        } catch {
+            Write-Host "[WARN] 未能删除本地标签 $tag：$($_.Exception.Message)" -ForegroundColor Yellow
+        }
+    }
+    if ($versionUpdateStarted -and -not $releaseTagPushed -and $currentVersion) {
+        try {
+            Invoke-CheckedCommand -FilePath (Get-Command git.exe).Source -Arguments @('restore', '--source=HEAD', '--staged', '--worktree', '--', 'package.json', 'package-lock.json') -Description '恢复 main 工作区版本号'
+            Write-Host "已恢复 main 工作区的版本号 $currentVersion。" -ForegroundColor Yellow
         } catch {
             Write-Host "[WARN] 自动恢复版本号失败：$($_.Exception.Message)" -ForegroundColor Yellow
         }
     }
-    if ($versionCommitCreated -and -not $mainPushSucceeded) {
-        Write-Host '版本提交已保留在本地但尚未推送。检查 Git 状态后，可运行 git push origin main，再重新运行发布流程。' -ForegroundColor Yellow
-    } elseif ($mainPushSucceeded) {
-        Write-Host 'main 分支已推送。请检查 GitHub 的标签和 Releases 页面，确认是否需要恢复未完成的发布。' -ForegroundColor Yellow
+    if ($releaseTagPushed) {
+        Write-Host "标签 $tag 已推送，main 分支未修改。若 Release 创建未完成，请检查 GitHub 的标签和 Releases 页面。" -ForegroundColor Yellow
     }
     $exitCode = 1
 } finally {

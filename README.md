@@ -91,7 +91,7 @@ npm run build 会编译界面并检查 TypeScript。此步骤不需要图鉴数�
 
 先将所有源码变更提交并推送到 main 分支，确认工作区干净且图鉴资料已准备完成，然后运行“一键发布.bat”。脚本会询问版本号、发行标题、发布说明、预发布状态和是否保存为草稿，并在执行前展示发布摘要。
 
-确认后，脚本会更新应用版本、调用一键打包流程、生成带版本号的 ZIP，并创建对应的 GitHub Release。版本号有变化时，会将 package.json 和 package-lock.json 的版本更新提交并推送到 main；Release 使用 v版本号 标签。最终输入 PUBLISH 才会开始构建和上传。
+确认后，脚本会更新应用版本、调用一键打包流程、生成带版本号的 ZIP，并创建对应的 GitHub Release。版本号有变化时，版本更新只写入该 Release 的版本标签快照；脚本只推送版本标签，不修改 main 分支。Release 使用 v版本号标签。最终输入 PUBLISH 才会开始构建和上传。
 
 发布电脑需要安装 Node.js 22.12 或更新版本、npm、GitHub CLI，并具备 Windows x64 桌面构建所需的离线资料和 Electron 运行时下载权限。
 
