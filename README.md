@@ -82,19 +82,6 @@ npm run build 会编译界面并检查 TypeScript。此步骤不需要图鉴数�
 
     npx install-electron --no
 
-### 一键创建 GitHub Release
-
-首次使用前，请安装 [GitHub CLI](https://cli.github.com/)，并在终端登录有本仓库写入权限的 GitHub 账号：
-
-    gh auth login
-    gh auth setup-git
-
-先将所有源码变更提交并推送到 main 分支，确认工作区干净且图鉴资料已准备完成，然后运行“一键发布.bat”。脚本会询问版本号、发行标题、发布说明、预发布状态和是否保存为草稿，并在执行前展示发布摘要。
-
-确认后，脚本会更新应用版本、调用一键打包流程、生成带版本号的 ZIP，并创建对应的 GitHub Release。版本号有变化时，版本更新只写入该 Release 的版本标签快照；脚本只推送版本标签，不修改 main 分支。Release 使用 v版本号标签。最终输入 PUBLISH 才会开始构建和上传。
-
-发布电脑需要安装 Node.js 22.12 或更新版本、npm、GitHub CLI，并具备 Windows x64 桌面构建所需的离线资料和 Electron 运行时下载权限。
-
 ## 使用说明
 
 - 首次使用时，可在界面中选择要查询的游戏规则版本。属性、历史数值和招式学习资料会随版本切换。

@@ -10,3 +10,6 @@ public/assets/
 .qa/
 __pycache__/
 *.log
+# Local-only GitHub Release publisher
+一键发布.bat
+scripts/publish-release.ps1
