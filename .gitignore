@@ -12,4 +12,6 @@ __pycache__/
 *.log
 # Local-only GitHub Release publisher
 一键发布.bat
+AGENTS.md
 scripts/publish-release.ps1
+tests

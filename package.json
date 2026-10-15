@@ -12,8 +12,21 @@
     "build": "tsc --noEmit && vite build",
     "start": "electron .",
     "package": "npm run build && node scripts/package.mjs",
-    "test": "node --test tests/*.test.cjs",
-    "test:ui": "node scripts/verify-ui.mjs"
+    "test": "node --test --test-reporter=spec tests/*.test.cjs",
+    "test:assistant": "node --test --test-reporter=spec tests/team-assistant.test.cjs tests/assistant-optimizations.test.cjs",
+    "test:assistant:optimizations": "node --test --test-reporter=spec tests/assistant-optimizations.test.cjs",
+    "test:data": "node --test --test-reporter=spec tests/data.test.cjs",
+    "test:battle": "node --test --test-reporter=spec tests/battle.test.cjs",
+    "test:strategies": "node --test --test-reporter=spec tests/strategy.test.cjs",
+    "test:teams": "node --test --test-reporter=spec tests/team.test.cjs tests/team-library.test.cjs",
+    "test:personal": "node --test --test-reporter=spec tests/storage.test.cjs tests/cultivation.test.cjs tests/workbench.test.cjs tests/backup.test.cjs",
+    "test:ui": "node scripts/verify-ui.mjs",
+    "test:ui:assistant:quick": "node scripts/verify-assistant.mjs --quick",
+    "test:ui:assistant:feedback": "node scripts/verify-assistant-feedback.mjs",
+    "test:ui:assistant": "node scripts/verify-assistant.mjs",
+    "test:ui:mini": "node scripts/verify-mini-entity.mjs",
+    "test:ui:mini-tabs": "node scripts/verify-mini-tabs.mjs",
+    "test:ui:dex-tools": "node scripts/verify-dex-tools.mjs"
   },
   "dependencies": {
     "@smogon/calc": "0.12.0",

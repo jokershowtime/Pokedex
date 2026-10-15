@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, Check, ChevronRight, FileText, Heart, LoaderCircl
 import type { Bootstrap, EntityKind, Move, Pokemon, PokemonDetail, UserState } from './types';
 import { EmptyState, PokemonImage, Reference, SectionTitle, TYPE_COLORS, TypeChip } from './components';
 import StrategyPanel from './StrategyPanel';
+import { GitCompareArrows } from 'lucide-react';
 
 export function MatchupGrid({ entries, types, compact = false }: { entries: PokemonDetail['matchup']; types: Bootstrap['types']; compact?: boolean }) {
   const groups = [
@@ -46,10 +47,11 @@ function Notes({ id, initial, save }: { id: number; initial: string; save: (id: 
   </section>;
 }
 
-export default function PokemonPanel({ detail, loading, data, user, onSelect, onFavorite, onEntity, onNote, mini = false }: {
+export default function PokemonPanel({ detail, loading, data, user, onSelect, onFavorite, onEntity, onNote, mini = false, onCompare, compared = false }: {
   detail: PokemonDetail | null; loading: boolean; data: Bootstrap; user: UserState;
   onSelect: (id: number) => void; onFavorite: (id: number) => void;
   onEntity: (kind: EntityKind, id: number) => void; onNote: (id: number, text: string) => Promise<void>; mini?: boolean;
+  onCompare?: (id: number) => void; compared?: boolean;
 }) {
   const [tab, setTab] = useState('overview');
   const [method, setMethod] = useState(0);
@@ -68,6 +70,7 @@ export default function PokemonPanel({ detail, loading, data, user, onSelect, on
   return <article className={`pokemon-panel ${mini ? 'mini-panel' : ''} ${loading ? 'is-loading' : ''}`} style={{ '--pokemon-color': TYPE_COLORS[detail.types[0]] } as React.CSSProperties}>
     <div className="detail-hero">
       <div className="hero-topline"><span className="eyebrow">全国图鉴 <b>#{String(detail.speciesId).padStart(4, '0')}</b></span><button className={`favorite-button ${favorite ? 'selected' : ''}`} onClick={() => onFavorite(detail.id)} aria-label={favorite ? '取消收藏当前宝可梦' : '收藏当前宝可梦'}><Star size={16} fill={favorite ? 'currentColor' : 'none'} />{favorite ? '已收藏' : '收藏'}</button></div>
+      {onCompare && <button className="dex-compare-add secondary-button" aria-pressed={compared} onClick={() => onCompare(detail.id)}><GitCompareArrows size={15} />{compared ? '移出宝可梦对比' : '加入宝可梦对比'}</button>}
       <div className="hero-content"><div className="hero-info">
         <div className="hero-tags">{detail.isLegendary && <span><Sparkles size={11} />传说</span>}{detail.isMythical && <span><Sparkles size={11} />幻之宝可梦</span>}<span>第 {detail.generation} 世代</span></div>
         <h1>{detail.name}</h1><p className="english-name">{detail.englishName}</p>

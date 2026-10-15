@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, ChevronLeft, ChevronRight, FlaskConical, LoaderCircle, Search, Sparkles, Swords, X } from 'lucide-react';
+import { ArrowUpRight, ChevronLeft, ChevronRight, FlaskConical, LoaderCircle, Pin, Search, Sparkles, Swords, X } from 'lucide-react';
 import type { Bootstrap, Entity, EntityDetail, EntityKind, ItemScope, UserState } from './types';
 import { EmptyState, PokemonImage, Reference, TypeChip } from './components';
 
@@ -14,12 +14,12 @@ export function EntityCard({ detail, data, user, onPokemon }: { detail: EntityDe
     </div></div>;
 }
 
-export function EntityModal({ selection, data, user, onClose, onPokemon }: { selection: { kind: EntityKind; id: number }; data: Bootstrap; user: UserState; onClose: () => void; onPokemon: (id: number) => void }) {
+export function EntityModal({ selection, data, user, onClose, onPokemon, onPin, pinning = false }: { selection: { kind: EntityKind; id: number }; data: Bootstrap; user: UserState; onClose: () => void; onPokemon: (id: number) => void; onPin?: () => void; pinning?: boolean }) {
   const [detail, setDetail] = useState<EntityDetail | null>(null);
   const [error, setError] = useState('');
   useEffect(() => { let live = true; setDetail(null); setError(''); window.pokedex.query<EntityDetail>('entity', { ...selection, versionId: user.settings.versionId }).then(value => { if (live) setDetail(value); }).catch(err => { if (live) setError(err.message); }); return () => { live = false; }; }, [selection.kind, selection.id, user.settings.versionId]);
   useEffect(() => { const listener = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); }; document.addEventListener('keydown', listener); return () => document.removeEventListener('keydown', listener); }, [onClose]);
-  return <div className="modal-backdrop" onClick={onClose}><div className="entity-modal" role="dialog" aria-modal="true" aria-label="资料详情" onClick={event => event.stopPropagation()}><button className="modal-close icon-button" aria-label="关闭资料详情" onClick={onClose} autoFocus><X size={20} /></button>{detail ? <EntityCard detail={detail} data={data} user={user} onPokemon={onPokemon} /> : error ? <EmptyState title="查询失败" description={error} /> : <div className="modal-loading"><LoaderCircle className="spin" /></div>}</div></div>;
+  return <div className="modal-backdrop" onClick={onClose}><div className="entity-modal" role="dialog" aria-modal="true" aria-label="资料详情" onClick={event => event.stopPropagation()}><button className="modal-close icon-button" aria-label="关闭资料详情" onClick={onClose} autoFocus><X size={20} /></button>{onPin && <button className="mini-modal-pin secondary-button" disabled={!detail || pinning} onClick={onPin}><Pin size={14} />固定为标签</button>}{detail ? <EntityCard detail={detail} data={data} user={user} onPokemon={onPokemon} /> : error ? <EmptyState title="查询失败" description={error} /> : <div className="modal-loading"><LoaderCircle className="spin" /></div>}</div></div>;
 }
 
 export default function Dictionary({ kind, data, user, onPokemon, onError }: { kind: EntityKind; data: Bootstrap; user: UserState; onPokemon: (id: number) => void; onError: (message: string) => void }) {

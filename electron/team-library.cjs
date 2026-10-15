@@ -143,7 +143,7 @@ function createTeamLibrary({ model, strategies, directory, fetcher, sample, prov
     })();
     return status(gen);
   }
-  function snapshot(gen, versionId) {
+  function snapshot(gen, versionId, decorate = true) {
     const all = [], skipped = [], dates = [], sourceStats = [];
     for (const format of sample.formats().filter(format => format.generation === gen)) {
       const cached = sample.read(format.id); if (!cached) continue;
@@ -173,7 +173,7 @@ function createTeamLibrary({ model, strategies, directory, fetcher, sample, prov
       return /^(?:ou|doublesou)$/.test(tier) ? 0 : /^(?:uu|vgc)/.test(tier) ? 1 : /^(?:ru|nu|pu|zu|lc)$/.test(tier) ? 2 : tier === 'anythinggoes' ? 4 : 3;
     };
     const result = [...unique.values()].sort((a, b) => (a.completeness?.status === 'complete' ? 0 : 1) - (b.completeness?.status === 'complete' ? 0 : 1) || order(a) - order(b));
-    return { teams: result.map(team => model.decorate(team, versionId)), formats: formats().filter(format => format.generation === gen),
+    return { teams: decorate ? result.map(team => model.decorate(team, versionId)) : result, formats: formats().filter(format => format.generation === gen),
       skipped, sources: sourceStats, duplicateCount: all.length - result.length,
       cache: { available: dates.length > 0, fetchedAt: dates.sort().at(-1) || null, totalTeams: result.length, generation: gen }, sync: status(gen) };
   }

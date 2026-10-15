@@ -13,7 +13,8 @@ export function linkedPlans(team: PokemonTeam, user: UserState) {
 }
 export function findSavedTeam(team: PokemonTeam, saved: PokemonTeam[]) {
   return saved.find(value => value.id === team.id || value.originId === team.id ||
-    Boolean(value.originId && team.aliases?.includes(value.originId)) || Boolean(team.fingerprint && team.fingerprint === value.fingerprint));
+    Boolean(value.originId && team.aliases?.includes(value.originId))) ||
+    saved.find(value => Boolean(team.fingerprint && team.fingerprint === value.fingerprint));
 }
 export function planTeam(plan: StrategySet, user: UserState) {
   return user.teams.find(team => team.id === plan.teamId && team.members.some(member => member.id === plan.id));

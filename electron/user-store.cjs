@@ -1,13 +1,15 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
+const { validatePreset, presetList } = require('./assistant-presets.cjs');
+const { MAX_TABS, tabKey, miniTab, miniTabs } = require('./mini-tabs.cjs');
 
 const UI_SCALES = [100, 125, 150, 175, 200];
-const DEFAULT_SETTINGS = { versionId: 27, theme: 'light', imageStyle: 'artwork', shortcut: 'Ctrl+Alt+P', keepOnTop: false, uiScale: 125 };
+const DEFAULT_SETTINGS = { versionId: 27, theme: 'light', imageStyle: 'artwork', shortcut: 'Ctrl+Alt+P', keepOnTop: false, uiScale: 125, miniTabs: [] };
 function createUserStore(directory) {
   fs.mkdirSync(directory, { recursive: true });
   const file = path.join(directory, 'preferences.json');
-  let state = { favorites: [], history: [], notes: {}, plans: [], teams: [], settings: { ...DEFAULT_SETTINGS } };
+  let state = { favorites: [], history: [], notes: {}, plans: [], teams: [], assistantPresets: [], settings: { ...DEFAULT_SETTINGS } };
   if (fs.existsSync(file)) {
     try {
       const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -17,7 +19,8 @@ function createUserStore(directory) {
         notes: saved.notes && typeof saved.notes === 'object' ? saved.notes : {},
         plans: Array.isArray(saved.plans) ? saved.plans.filter(plan => plan && typeof plan.id === 'string' && Number.isInteger(plan.pokemonId) && plan.selection && Array.isArray(plan.moveOptions)).slice(0, 2000) : [],
         teams: Array.isArray(saved.teams) ? saved.teams.filter(team => team && typeof team.id === 'string' && typeof team.format === 'string' && Array.isArray(team.members) && team.members.length > 0 && team.members.length <= 6 && team.members.every(member => member && Number.isInteger(member.pokemonId) && member.selection)).slice(0, 200) : [],
-        settings: { ...DEFAULT_SETTINGS, ...saved.settings },
+        assistantPresets: presetList(saved.assistantPresets, false),
+        settings: { ...DEFAULT_SETTINGS, ...saved.settings, miniTabs: miniTabs(saved.settings?.miniTabs, false) },
       };
       if (!UI_SCALES.includes(state.settings.uiScale)) state.settings.uiScale = DEFAULT_SETTINGS.uiScale;
     } catch {
@@ -37,7 +40,14 @@ function createUserStore(directory) {
   function persist() {
     const temporary = `${file}.tmp`;
     fs.writeFileSync(temporary, JSON.stringify(state, null, 2), 'utf8');
-    fs.renameSync(temporary, file);
+    for (let attempt = 0; ; attempt++) {
+      try { fs.renameSync(temporary, file); break; }
+      catch (error) {
+        // Windows can briefly hold the replaced file during indexing.
+        if (process.platform !== 'win32' || !['EPERM', 'EACCES', 'EBUSY'].includes(error.code) || attempt === 3) throw error;
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25 * (attempt + 1));
+      }
+    }
     return structuredClone(state);
   }
   function preparedPlan(input, snapshot) {
@@ -58,6 +68,20 @@ function createUserStore(directory) {
   }
   return {
     get: () => structuredClone(state),
+    currentSettings: () => structuredClone(state.settings),
+    pinMini(input) {
+      const tab = miniTab(input), previous = state.settings.miniTabs;
+      if (previous.some(value => tabKey(value) === tabKey(tab))) return structuredClone(state);
+      if (previous.length >= MAX_TABS) throw new Error('最多固定 12 个标签，请先关闭不需要的标签。');
+      state.settings.miniTabs = [...previous, tab];
+      try { return persist(); } catch (error) { state.settings.miniTabs = previous; throw error; }
+    },
+    unpinMini(key) {
+      if (typeof key !== 'string') throw new Error('标签编号无效。');
+      const previous = state.settings.miniTabs;
+      state.settings.miniTabs = previous.filter(value => tabKey(value) !== key);
+      try { return persist(); } catch (error) { state.settings.miniTabs = previous; throw error; }
+    },
     favorite(id) {
       state.favorites = state.favorites.includes(id) ? state.favorites.filter(value => value !== id) : [...state.favorites, id];
       return persist();
@@ -73,11 +97,26 @@ function createUserStore(directory) {
       return persist();
     },
     settings(settings) { state.settings = { ...state.settings, ...settings }; return persist(); },
+    saveAssistantPreset(input) {
+      const previous = state.assistantPresets;
+      if (input?.id && !previous.some(value => value.id === input.id)) throw new Error('找不到要更新的条件模板。');
+      if (!input?.id && previous.length >= 30) throw new Error('条件模板最多保存 30 个。');
+      const preset = validatePreset({ ...input, id: input?.id || 'assistant-preset-' + randomUUID() });
+      if (previous.some(value => value.id !== preset.id && value.title === preset.title)) throw new Error('已有同名模板，请选择该模板更新，或修改名称。');
+      state.assistantPresets = [preset, ...previous.filter(value => value.id !== preset.id)];
+      try { return persist(); } catch (error) { state.assistantPresets = previous; throw error; }
+    },
+    deleteAssistantPreset(id) {
+      const previous = state.assistantPresets;
+      if (!previous.some(value => value.id === id)) throw new Error('找不到这个条件模板。');
+      state.assistantPresets = previous.filter(value => value.id !== id);
+      try { return persist(); } catch (error) { state.assistantPresets = previous; throw error; }
+    },
     restorePersonal(input) {
       const recovery = path.join(directory, 'preferences.before-restore-' + Date.now() + '.json');
       fs.writeFileSync(recovery, JSON.stringify(state, null, 2), 'utf8');
       const previous = state;
-      state = { ...structuredClone(input), settings: { ...state.settings } };
+      state = { ...structuredClone(input), assistantPresets: presetList(input.assistantPresets), settings: { ...state.settings } };
       try { return { user: persist(), recovery }; } catch (error) { state = previous; throw error; }
     },
     savePlan(input) {
@@ -90,41 +129,48 @@ function createUserStore(directory) {
     },
     savePlans(inputs) {
       if (!Array.isArray(inputs) || inputs.length + state.plans.length > 2000) throw new Error('导入后将超过 2000 套个人方案，请减少数量。');
-      const plans = inputs.map(preparedPlan); state.plans = [...plans, ...state.plans]; return persist();
+      const plans = inputs.map(input => preparedPlan(input)); state.plans = [...plans, ...state.plans]; return persist();
     },
     deletePlan(id) {
       if (!state.plans.some(plan => plan.id === id)) throw new Error('找不到这套个人方案。');
       state.plans = state.plans.filter(plan => plan.id !== id); return persist();
     },
-    saveTeam(input) {
+    saveTeam(input, { roster = false, copy = false } = {}) {
       const existing = state.teams.find(team => team.id === input.id);
       const sourceTeam = /^(?:smogon|source)-team-/.test(input.id || '');
       if (!existing && sourceTeam && state.teams.some(team => team.originId === input.id || input.aliases?.includes(team.originId) || input.fingerprint && team.fingerprint === input.fingerprint)) return structuredClone(state);
       if (!existing && state.teams.length >= 200) throw new Error('最多收藏 200 支队伍。');
-      if (existing && input.members.some(member => !existing.members.some(value => value.id === member.id))) throw new Error('成员编号与收藏队伍不一致，请重新导入这支队伍。');
-      if (existing && input.members.some(member => state.plans.some(plan => plan.id === member.id && plan.teamId !== existing.id))) throw new Error('成员计划与其他方案冲突，未修改队伍。');
+      const retainedIds = new Set(existing?.members.map(member => member.id) || []);
+      if (existing && !roster && input.members.some(member => !retainedIds.has(member.id))) throw new Error('成员编号与收藏队伍不一致，请重新导入这支队伍。');
+      if (existing && input.members.some(member => retainedIds.has(member.id) && state.plans.some(plan => plan.id === member.id && plan.teamId !== existing.id))) throw new Error('成员计划与其他方案冲突，未修改队伍。');
       const referenced = new Set(state.teams.flatMap(team => team.members.map(member => member.id)));
       const reused = new Map(), used = new Set();
-      if (!existing && sourceTeam) for (const member of input.members) {
+      if (roster && !copy || !existing && sourceTeam) for (const member of input.members) {
+        if (retainedIds.has(member.id)) continue;
         const candidates = state.plans.filter(plan => !plan.teamId && !referenced.has(plan.id) && !used.has(plan.id) &&
-          plan.originId === member.id && plan.pokemonId === member.pokemonId && plan.generation === member.generation);
+          (roster ? plan.id === member.id : plan.originId === member.id) && plan.pokemonId === member.pokemonId && plan.generation === member.generation);
         if (candidates.length === 1) { reused.set(member.id, candidates[0]); used.add(candidates[0].id); }
       }
-      const added = existing ? 0 : input.members.length - reused.size;
+      const added = roster ? input.members.filter(member => !retainedIds.has(member.id) && !reused.has(member.id)).length :
+        existing ? 0 : input.members.length - reused.size;
       if (state.plans.length + added > 2000) throw new Error('保存队伍后将超过 2000 套培养方案，请先整理已有方案。');
       const now = new Date().toISOString(), id = existing?.id || 'personal-team-' + randomUUID();
       const members = input.members.map(member => {
-        if (existing) return preparedPlan({ ...member, teamId: id }, existing.members.find(value => value.id === member.id));
+        if (retainedIds.has(member.id)) return preparedPlan({ ...member, teamId: id }, existing.members.find(value => value.id === member.id));
         const retained = reused.get(member.id);
-        return retained ? preparedPlan({ ...retained, teamId: id }) :
+        return retained ? preparedPlan({ ...(roster ? member : retained), teamId: id }) :
           preparedPlan({ ...member, id: 'new-team-member', teamId: id, originId: member.originId || (sourceTeam ? member.id : null) });
       });
       const team = { ...structuredClone(input), id, members, personal: true, originId: existing?.originId || input.originId || (sourceTeam ? input.id : null),
         createdAt: existing?.createdAt || now, updatedAt: now };
-      const activeMembers = existing ? members.filter(member => state.plans.some(plan => plan.id === member.id && plan.teamId === id)) : members;
+      const activeMembers = existing ? members.filter(member => !retainedIds.has(member.id) || state.plans.some(plan => plan.id === member.id && plan.teamId === id)) : members;
       const memberIds = new Set(activeMembers.map(member => member.id));
+      const removedIds = new Set(existing?.members.filter(member => !input.members.some(value => value.id === member.id)).map(member => member.id) || []);
       const previous = state;
-      state = { ...state, plans: [...activeMembers, ...state.plans.filter(plan => !memberIds.has(plan.id))],
+      state = { ...state, plans: [...activeMembers, ...state.plans.filter(plan => !memberIds.has(plan.id)).map(plan => {
+        if (!removedIds.has(plan.id) || plan.teamId !== id) return plan;
+        const independent = { ...plan }; delete independent.teamId; return independent;
+      })],
         teams: existing ? state.teams.map(value => value.id === existing.id ? team : value) : [team, ...state.teams] };
       try { return persist(); } catch (error) { state = previous; throw error; }
     },

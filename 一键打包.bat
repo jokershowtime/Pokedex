@@ -11,6 +11,9 @@ echo 请先关闭正在运行的图鉴，以免成品文件被占用。
 echo.
 
 set "package_step=检查 Node.js 和 npm"
+set "node_search_path="
+for /f "usebackq delims=" %%I in (`powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\resolve-node.ps1"`) do if not defined node_search_path set "node_search_path=%%I"
+if defined node_search_path set "PATH=%node_search_path%;%PATH%"
 where node.exe >nul 2>&1
 if errorlevel 1 goto node_error
 where npm.cmd >nul 2>&1

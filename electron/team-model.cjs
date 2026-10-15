@@ -1,7 +1,7 @@
 const { createHash } = require('node:crypto');
 const { formatLabel, DEFAULT_VERSIONS } = require('./strategy-model.cjs');
 
-const RULES = /^(?:ubers|ubersuu|ou|uu|ru|nu|pu|zu|lc|nfe|1v1|monotype|doublesou|doublesuu|battlestadiumsingles|battlestadiumdoubles|battlespotsingles|battlespotdoubles|nationaldex|nationaldexdoubles|nationaldexmonotype|nationaldexuu|nationaldexubers|bdspou|letsgoou|anythinggoes|vgc\d{4}[a-z0-9]*)$/;
+const RULES = /^(?:free|freedoubles|ubers|ubersuu|ou|uu|ru|nu|pu|zu|lc|nfe|1v1|monotype|doublesou|doublesuu|battlestadiumsingles|battlestadiumdoubles|battlespotsingles|battlespotdoubles|nationaldex|nationaldexdoubles|nationaldexmonotype|nationaldexuu|nationaldexubers|bdspou|letsgoou|anythinggoes|vgc\d{4}[a-z0-9]*)$/;
 const TAGS = [
   { id: 'rain', label: '雨天', pattern: /\brain\b|雨天/i, abilities: ['Drizzle', 'Primordial Sea'], moves: ['Rain Dance'] },
   { id: 'sun', label: '晴天', pattern: /\bsun\b|晴天/i, abilities: ['Drought', 'Desolate Land', 'Orichalcum Pulse'], moves: ['Sunny Day'] },

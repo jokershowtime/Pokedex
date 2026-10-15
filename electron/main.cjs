@@ -7,6 +7,7 @@ const { createUserStore, UI_SCALES } = require('./user-store.cjs');
 const { createStrategyService } = require('./strategy-service.cjs');
 const { createTeamService } = require('./team-service.cjs');
 const { createBattleService } = require('./battle-service.cjs');
+const { createTeamAssistantService } = require('./team-assistant-service.cjs');
 const { createBackupService } = require('./backup-service.cjs');
 const { sourceURL } = require('./team-network.cjs');
 
@@ -20,7 +21,7 @@ app.setAppUserModelId('cn.pokedex.desktop');
 const singleInstance = process.env.POKEDEX_TEST === '1' || app.requestSingleInstanceLock();
 if (!singleInstance) app.quit();
 
-let mainWindow, miniWindow, data, store, strategies, teams, battle, backups, quitting = false;
+let mainWindow, miniWindow, data, store, strategies, teams, battle, assistant, backups, quitting = false;
 const pendingBackups = new Map();
 function testBackupPath(value) {
   if (process.env.POKEDEX_TEST !== '1' || typeof value !== 'string') throw new Error('备份路径只能由文件选择器提供。');
@@ -114,6 +115,8 @@ if (singleInstance) app.whenReady().then(() => {
       onUpdate: progress => { for (const window of BrowserWindow.getAllWindows()) if (!window.isDestroyed()) window.webContents.send('dex:teams-updated', progress); },
     });
     battle = createBattleService(data, strategies, teams);
+    assistant = createTeamAssistantService({ databasePath: path.join(ROOT, 'data/pokedex.sqlite'), directory: app.getPath('userData'),
+      onUpdate: progress => { for (const window of BrowserWindow.getAllWindows()) if (!window.isDestroyed()) window.webContents.send('dex:assistant-updated', progress); } });
     backups = createBackupService(data, strategies, teams);
     const bootstrap = data.query('bootstrap');
     const settings = store.get().settings;
@@ -152,15 +155,42 @@ if (singleInstance) app.whenReady().then(() => {
     });
     ipcMain.handle('dex:team', async (event, action, args = {}) => {
       trusted(event);
-      const versionId = store.get().settings.versionId;
+      const versionId = store.currentSettings().versionId;
       if (action === 'formats') return teams.formats(args.refresh === true);
       if (action === 'metadata') return teams.metadata();
+      if (action === 'assistant-metadata') return assistant.metadata(teams.metadata().formats);
+      if (action === 'assistant-preset-save') {
+        const user = emitUser(store.saveAssistantPreset(args.preset)); return user.assistantPresets[0];
+      }
+      if (action === 'assistant-preset-delete') { emitUser(store.deleteAssistantPreset(args.id)); return true; }
+      if (action === 'assistant-start') return assistant.start(event.sender.id, args, { versionId });
+      if (action === 'assistant-status') return assistant.status(event.sender.id, args.runId, args.summary === true);
+      if (action === 'assistant-inspect') return assistant.inspect(event.sender.id, args.runId, args.index);
+      if (action === 'assistant-opponent-import') {
+        const { snapshot } = require('./assistant-scenario.cjs');
+        const sets = strategies.import(args.text, args.generation);
+        if (sets.length > 6) throw new Error('一次最多导入 6 条对手路线。');
+        return sets.map(set => ({ pokemonId: set.pokemonId, build: snapshot(set) }));
+      }
+      if (action === 'assistant-cancel') return assistant.cancel(event.sender.id, args.runId);
+      if (action === 'assistant-save') {
+        const result = assistant.result(event.sender.id, args.runId, args.index);
+        if (result.savedId && store.get().teams.some(team => team.id === result.savedId)) return { user: store.get(), teamId: result.savedId };
+        const team = teams.model.validate(result.team, versionId), user = emitUser(store.saveTeam(team, { roster: true, copy: true }));
+        const teamId = user.teams[0].id; assistant.saved(event.sender.id, args.runId, args.index, teamId);
+        return { user, teamId };
+      }
       if (action === 'list') return teams.list({ ...args, versionId });
       if (action === 'browse') return teams.browse({ ...args, versionId });
       if (action === 'sync') return teams.sync(args);
       if (action === 'personal') { const user = store.get(); return user.teams.map(team => teams.model.decorate(team, versionId, user.plans)); }
       if (action === 'preview') return teams.model.decorate(await teams.import(args), versionId);
       if (action === 'save') return emitUser(store.saveTeam(teams.model.validate(args.team, versionId)));
+      if (action === 'compose-preview') {
+        const team = teams.compose(args, store.get(), versionId);
+        return { ...teams.model.decorate(team, versionId), id: 'workbench-preview', personal: false };
+      }
+      if (action === 'compose-save') return emitUser(store.saveTeam(teams.compose(args, store.get(), versionId), { roster: true, copy: Boolean(args.copyFrom) }));
       if (action === 'restore') {
         const saved = store.get().teams.find(team => team.id === args.id);
         if (!saved) throw new Error('找不到这支收藏队伍。');
@@ -221,6 +251,13 @@ if (singleInstance) app.whenReady().then(() => {
     ipcMain.handle('dex:user', (event, action, args = {}) => {
       trusted(event);
       if (action === 'get') return { ...store.get(), shortcutAvailable: globalShortcut.isRegistered(store.get().settings.shortcut) };
+      if (action === 'mini-pin') {
+        if (!['pokemon', 'moves', 'abilities', 'items'].includes(args.kind) || !Number.isInteger(args.id)) throw new Error('请选择有效的资料。');
+        const reference = data.references()[args.kind].find(value => value.id === args.id);
+        if (!reference) throw new Error('未找到要固定的资料。');
+        return emitUser(store.pinMini({ kind: args.kind, id: args.id, name: reference.name }));
+      }
+      if (action === 'mini-unpin') return emitUser(store.unpinMini(args.key));
       if (action === 'settings') {
         const allowed = ['versionId', 'theme', 'imageStyle', 'shortcut', 'keepOnTop', 'uiScale'];
         if (Object.keys(args).some(key => !allowed.includes(key))) throw new Error('无效的设置项目。');
@@ -265,5 +302,5 @@ if (singleInstance) app.whenReady().then(() => {
 });
 app.on('second-instance', () => { if (store) showMain(); });
 app.on('before-quit', () => { quitting = true; });
-app.on('will-quit', () => { globalShortcut.unregisterAll(); data?.close(); });
+app.on('will-quit', () => { assistant?.dispose(); globalShortcut.unregisterAll(); data?.close(); });
 app.on('window-all-closed', () => app.quit());

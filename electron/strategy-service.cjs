@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { randomUUID } = require('node:crypto');
 const { createStrategyModel } = require('./strategy-model.cjs');
 const { importSets, exportSet } = require('./strategy-text.cjs');
 
@@ -43,8 +44,12 @@ function createStrategyService(data, directory, fetcher = globalThis.fetch) {
       const sets = model.normalizeDataset(payload, gen, fetchedAt);
       const snapshot = { schemaVersion: 1, generation: gen, fetchedAt, data: payload, sets };
       const file = path.join(directory, `gen${gen}.json`);
-      fs.writeFileSync(`${file}.tmp`, JSON.stringify({ schemaVersion: 1, generation: gen, fetchedAt, data: payload }), 'utf8');
-      fs.renameSync(`${file}.tmp`, file); memory.set(gen, snapshot);
+      const temporary = file + '.' + randomUUID() + '.tmp';
+      try {
+        fs.writeFileSync(temporary, JSON.stringify({ schemaVersion: 1, generation: gen, fetchedAt, data: payload }), 'utf8');
+        fs.renameSync(temporary, file);
+      } finally { if (fs.existsSync(temporary)) fs.unlinkSync(temporary); }
+      memory.set(gen, snapshot);
       return snapshot;
     })();
     pending.set(gen, operation);
@@ -87,6 +92,14 @@ function createStrategyService(data, directory, fetcher = globalThis.fetch) {
   }
   return {
     model, list, validatePersonal,
+    async dataset(input, refresh = false) {
+      const gen = generation(input); let cached = read(gen), error = null;
+      if (refresh || !cached) {
+        try { cached = await sync(gen); }
+        catch (failure) { error = '配招资料获取失败：' + (failure.name === 'TimeoutError' ? '请求超时' : failure.message); }
+      }
+      return { sets: cached?.sets || [], fetchedAt: cached?.fetchedAt || null, error };
+    },
     references: () => model.refs,
     decorate: (set, versionId) => model.decorate(set, versionId),
     import: (text, gen) => importSets(text, generation(gen), model),

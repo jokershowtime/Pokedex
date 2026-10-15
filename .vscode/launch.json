@@ -1,0 +1,47 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "图鉴：Electron 主进程",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/electron/dist/electron.exe",
+      "runtimeArgs": ["--remote-debugging-port=9222"],
+      "args": ["."],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "ELECTRON_RUN_AS_NODE": null,
+        "POKEDEX_DEV_URL": null,
+        "POKEDEX_USER_DATA": "${workspaceFolder}/.qa/vscode-debug"
+      },
+      "console": "integratedTerminal",
+      "skipFiles": ["<node_internals>/**", "${workspaceFolder}/node_modules/**"],
+      "presentation": { "hidden": true }
+    },
+    {
+      "name": "图鉴：React 界面",
+      "type": "pwa-chrome",
+      "request": "attach",
+      "port": 9222,
+      "urlFilter": "file:///*/dist/index.html*",
+      "webRoot": "${workspaceFolder}",
+      "timeout": 30000,
+      "sourceMaps": true,
+      "sourceMapPathOverrides": {
+        "../../src/*": "${workspaceFolder}/src/*",
+        "../../node_modules/*": "${workspaceFolder}/node_modules/*"
+      },
+      "skipFiles": ["**/node_modules/**"],
+      "presentation": { "hidden": true }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "宝可梦图鉴：F5 完整调试",
+      "configurations": ["图鉴：Electron 主进程", "图鉴：React 界面"],
+      "preLaunchTask": "图鉴：准备调试界面",
+      "stopAll": true,
+      "presentation": { "order": 1 }
+    }
+  ]
+}

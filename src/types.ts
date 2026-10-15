@@ -35,9 +35,26 @@ export interface EntityDetail extends Entity {
 }
 export interface ItemScope { generation: number; indexed: boolean; notice: string }
 export type EntityKind = 'moves' | 'abilities' | 'items';
-export type Page = 'dex' | EntityKind | 'matchup' | 'favorites' | 'history' | 'plans' | 'teams' | 'battle' | 'settings';
-export interface Settings { versionId: number; theme: 'light' | 'dark'; imageStyle: 'artwork' | 'sprite'; shortcut: string; keepOnTop: boolean; uiScale: number }
-export interface UserState { favorites: number[]; history: { id: number; at: string }[]; notes: Record<string, string>; plans: StrategySet[]; teams: PokemonTeam[]; settings: Settings; shortcutAvailable?: boolean }
+export type Page = 'dex' | EntityKind | 'matchup' | 'favorites' | 'history' | 'plans' | 'teams' | 'assistant' | 'battle' | 'settings' | 'discover' | 'compare';
+export interface LearningSource { status: 'exact' | 'reference' | 'missing'; version: string | null; versionId: number | null }
+export interface LearnedMove extends Move { methods: { id: number; name: string; level: number; machineNumber: number | null }[] }
+export interface DiscoveryConditions {
+  query: string; types: number[]; abilityId: number; abilityScope: 'any' | 'normal' | 'hidden'; moves: number[]; showForms: boolean;
+  stats: Record<string, { min?: number; max?: number }>; total: { min?: number; max?: number };
+}
+export interface DiscoveryResult {
+  version: Version; page: number; size: number; total: number; unknown: number; learning: LearningSource;
+  results: { pokemon: Pokemon; moves: LearnedMove[] }[];
+}
+export interface DexComparison {
+  version: Version; learning: LearningSource; complete: boolean; common: number[]; unique: number[][];
+  columns: { pokemon: Pokemon; matchup: Effectiveness[]; recorded: boolean; moves: LearnedMove[] }[];
+}
+export interface QuickSearchEntry { kind: 'pokemon' | EntityKind; id: number; name: string; subtitle: string; number: number; types: number[] }
+export interface QuickSearchResult { version: Version; page: number; size: number; total: number; groups: { kind: QuickSearchEntry['kind']; label: string; total: number; entries: QuickSearchEntry[] }[] }
+export interface MiniTab { kind: 'pokemon' | EntityKind; id: number; name: string }
+export interface Settings { versionId: number; theme: 'light' | 'dark'; imageStyle: 'artwork' | 'sprite'; shortcut: string; keepOnTop: boolean; uiScale: number; miniTabs: MiniTab[] }
+export interface UserState { favorites: number[]; history: { id: number; at: string }[]; notes: Record<string, string>; plans: StrategySet[]; teams: PokemonTeam[]; assistantPresets: AssistantPreset[]; settings: Settings; shortcutAvailable?: boolean }
 export interface Bootstrap {
   manifest: { speciesCount: number; pokemonCount: number; moveCount: number; abilityCount: number; itemCount: number; importedAt: string; chineseNameCount: number; imageCounts: Record<string, number> };
   versions: Version[]; types: TypeInfo[]; generations: string[]; methods: Record<string, string>;
@@ -52,6 +69,7 @@ export interface DesktopAPI {
   window(action: string): Promise<boolean>;
   onUserChange(callback: (state: UserState) => void): () => void;
   onTeamUpdate(callback: (progress: TeamSync) => void): () => void;
+  onAssistantUpdate(callback: (progress: AssistantSummary | null) => void): () => void;
   onNavigate(callback: (id: number) => void): () => void;
 }
 export type StatKey = 'hp' | 'atk' | 'def' | 'spa' | 'spd' | 'spe';
@@ -75,6 +93,7 @@ export interface StrategySet {
   validation?: StrategyValidation; personal?: boolean; originId?: string | null; notes?: string;
   progress?: Record<string, boolean>; createdAt?: string; updatedAt?: string;
   showdownSpecies?: string; teamId?: string;
+  referenceGeneration?: number;
   missingFields?: ('evs' | 'ivs' | 'nature')[];
 }
 export interface StrategyList {
@@ -97,6 +116,69 @@ export interface TeamList {
   teams: PokemonTeam[]; skipped: { name: string; reason: string }[]; error: string | null;
   cache: { available: boolean; fetchedAt: string | null; totalTeams: number; format: string };
 }
+export interface TeamConditions {
+  format: string; scopeGeneration: number; category: 'singles' | 'doubles'; level: number; resultCount: number; minDifference: number; requiredIds: number[]; excludedIds: number[];
+  targetTypes: number[]; attackTypes: number[]; resistTypes: number[]; immuneTypes: number[]; memberTypes: number[]; excludedTypes: number[];
+  roles: string[]; requiredMoves: string[]; style: string; preference: string; minCoverage: number; maxWeak: number; maxSameType: number;
+  fastCount: number; fastSpeed: number; slowCount: number; slowSpeed: number;
+  excludeLegendary: boolean; excludeMythical: boolean; noFourfold: boolean; uniqueItems: boolean;
+  roleCounts: Record<string, number>; opponents: OpponentCondition[];
+  scenario: AssistantScenario;
+}
+export interface AssistantScenario { field: Pick<BattleField, 'weather' | 'terrain' | 'gravity' | 'trickRoom'>; teamState: BattleState }
+export interface OpponentBuild { title: string; generation: number; showdownSpecies?: string; source: string; selection: StrategySelection }
+export interface OpponentCondition { id?: string; pokemonId: number; reference: 'source' | 'fastest' | 'manual'; build?: OpponentBuild; state?: BattleState; minAttack: number; minResist: number; minFaster: number }
+export interface OpponentReference { targetId: string; pokemonId: number; name: string; speed: number; method: OpponentCondition['reference']; state: BattleState; reference: StrategySet }
+export interface OpponentMatchup {
+  pokemonId: number; targetId: string; attackers: { pokemonId: number; name: string; moves: { name: string; multiplier: number }[] }[];
+  resistors: { pokemonId: number; name: string }[]; faster: { pokemonId: number; name: string; speed: number }[]; uncertain: boolean;
+  speeds: { pokemonId: number; name: string; normal: number; current: number; opponent: number; first: 'tie' | 'member' | 'opponent' }[];
+}
+export interface TeamPlaybook { opening: string[]; rotation: string[]; pressure: string[]; cautions: string[]; roles: { label: string; members: string[]; minimum: number }[] }
+export interface AssistantMetadata {
+  formats: TeamFormat[]; roles: { id: string; label: string }[]; styles: { id: string; label: string; note: string }[];
+}
+export interface AssistantPreset { id: string; title: string; conditions: TeamConditions }
+export interface AssistantIssue {
+  kind: 'conflict' | 'data' | 'range' | 'search'; title: string; conditions: string[]; explanation: string; suggestions: string[];
+}
+export interface AssistantPreview {
+  key: string; score: number; metrics: AssistantResult['metrics'];
+  members: { pokemonId: number; name: string; selection: StrategySelection; speed: number }[];
+}
+export interface AssistantResult {
+  team: PokemonTeam; checks: { label: string; count: number; required?: number; maximum?: number; members: string[] }[];
+  metrics: { coverage: number; resistances: number; distinctTypes: number; maxWeak: number };
+  opponentMatchups: OpponentMatchup[]; plan: TeamPlaybook;
+  scenarioSpeeds: { pokemonId: number; name: string; normal: number; current: number }[];
+  assessment: {
+    score: number; components: { label: string; points: number }[]; physical: number; special: number;
+    roles: { id: string; label: string; count: number }[]; speeds: { pokemonId: number; name: string; value: number }[];
+    attackTypes: number[]; resistTypes: number[]; sharedWeaknesses: { typeId: number; count: number }[]; synergies: string[]; warnings: string[];
+  };
+}
+export interface AssistantRun {
+  runId: string; state: 'running' | 'cancelling' | 'cancelled' | 'complete' | 'error'; phase: string; message: string; elapsedMs: number;
+  constraints: TeamConditions & { generation: number; outputFormat: string };
+  prepared: number; examined: number; species?: number; dataMs?: number; prepareMs?: number; searchMs?: number;
+  cacheHit?: boolean; lockedPokemonIds?: number[];
+  total: string; processed: string; evaluated: string; prunedCombinations: string; percent: number; found: number; seedTeams?: number;
+  reason?: string; strategy?: 'exact' | 'guided' | 'checks'; stage?: string; round?: number; results: AssistantResult[]; diagnostics: string[]; warnings: string[];
+  previews: AssistantPreview[]; previewRevision: number; issues: AssistantIssue[];
+  opponents: OpponentReference[];
+  inspection?: AssistantInspection;
+}
+export interface AssistantDamageMove { move: string; baseline: DamageMove | null; active: DamageMove | null; unknown: string }
+export interface AssistantDamageRow {
+  memberId: string; pokemonId: number; name: string; targetId: string; opponentName: string; title: string;
+  speed: number; normalSpeed: number; targetSpeed: number; normalTargetSpeed: number; first: 'tie' | 'member' | 'opponent';
+  outgoing: AssistantDamageMove[]; incoming: AssistantDamageMove[];
+}
+export interface AssistantInspection {
+  state: AssistantRun['state']; index: number; processed: number; total: number; percent: number; elapsedMs: number; error?: string;
+  report: { rows: AssistantDamageRow[]; total: number; processed: number; elapsedMs: number; note: string } | null;
+}
+export type AssistantSummary = Pick<AssistantRun, 'runId' | 'state' | 'phase' | 'percent' | 'found'>;
 export interface TeamSync { generation: number; state: 'idle' | 'running' | 'complete' | 'partial'; completed: number; total: number; current: string; errors: string[]; updatedAt: string | null }
 export interface TeamLibrary {
   teams: PokemonTeam[]; formats: TeamFormat[]; skipped: { name: string; reason: string; provider?: string }[]; error: string | null; duplicateCount: number;

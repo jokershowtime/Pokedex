@@ -403,9 +403,15 @@ kbd { display: inline-flex; align-items: center; justify-content: center; border
 .mini-panel .evolution-edge { gap: 9px; }
 .mini-panel .evolution-pokemon .pokemon-image { width: 52px; height: 52px; }
 .mini-panel .evolution-condition { font-size: 12px; }
-.mini-shell .modal-backdrop { padding: 15px; }
-.mini-shell .entity-body { padding: 18px; }
-.mini-shell .learner-grid { grid-template-columns: repeat(3, 1fr); }
+.mini-shell .modal-backdrop { padding: 12px; grid-template-columns: minmax(0, 1fr); }
+.mini-shell .entity-modal { width: 100%; min-width: 0; max-height: calc(100vh - 24px); overflow-x: hidden; overscroll-behavior: contain; }
+.mini-shell .entity-modal .entity-hero { margin-top: 0; padding: 24px 40px 18px; }
+.mini-shell .entity-hero .entity-symbol { width: 48px; height: 48px; margin-bottom: 12px; }
+.mini-shell .entity-body { padding: 18px; min-width: 0; }
+.mini-shell .entity-description, .mini-shell .entity-hero .english-name, .mini-shell .learner-grid span, .mini-shell .learner-grid small { overflow-wrap: anywhere; }
+.mini-shell .learner-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 96px), 1fr)); }
+.mini-shell .learner-grid button { min-width: 0; }
+.mini-shell .learners .section-heading { flex-wrap: wrap; gap: 6px; }
 @media (max-width: 1200px) and (min-width: 700px) {
   .sidebar { width: 183px; padding-left: 10px; padding-right: 10px; }
   .brand { gap: 7px; }

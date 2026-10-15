@@ -18,6 +18,11 @@ contextBridge.exposeInMainWorld('pokedex', {
     ipcRenderer.on('dex:teams-updated', listener);
     return () => ipcRenderer.removeListener('dex:teams-updated', listener);
   },
+  onAssistantUpdate: callback => {
+    const listener = (_event, progress) => callback(progress);
+    ipcRenderer.on('dex:assistant-updated', listener);
+    return () => ipcRenderer.removeListener('dex:assistant-updated', listener);
+  },
   onNavigate: callback => {
     const listener = (_event, id) => callback(id);
     ipcRenderer.on('dex:navigate', listener);

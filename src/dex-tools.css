@@ -1,0 +1,98 @@
+.dex-tools-page { min-width: 0; padding-right: 3px; }
+.dex-tools-page h1 { display: flex; gap: 9px; align-items: center; }
+.dex-tool-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 17px; min-width: 0; }
+.dex-tool-card h2, .discovery-results > h2 { font-size: 20px; line-height: 1.7; margin-bottom: 16px; }
+.dex-help { color: var(--muted); font-size: 14px; line-height: 1.9; margin: 12px 0; overflow-wrap: anywhere; }
+.dex-query-conditions { border: 0; padding: 0; margin: 0; min-width: 0; }
+.dex-filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 15px; margin-bottom: 16px; }
+.dex-filter-grid label { display: flex; flex-direction: column; gap: 8px; font-size: 15px; line-height: 1.8; min-width: 0; }
+.dex-tools-page input:not([type=checkbox]), .dex-tools-page select, .reference-picker-input input, .reference-picker-input select { padding: 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--input); color: var(--text); min-width: 0; width: 100%; font-size: 15px; }
+.dex-check { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 15px; }
+.dex-check input { width: 16px; height: 16px; accent-color: var(--green); }
+.dex-stat-ranges { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr)); gap: 14px 22px; }
+.dex-stat-range { display: flex; align-items: center; gap: 8px; font-size: 15px; min-width: 0; }
+.dex-stat-range strong { flex: 0 0 46px; font-weight: 550; }
+.dex-stat-range input { flex: 1; width: 0; }
+.reference-picker { min-width: 0; margin-top: 14px; }
+.reference-picker-title { display: flex; gap: 10px; justify-content: space-between; font-size: 15px; line-height: 1.8; margin-bottom: 9px; }
+.reference-picker-title span { color: var(--muted); font-size: 13px; }
+.reference-picker-input { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.reference-picker-input > svg { flex-shrink: 0; color: var(--muted); }
+.reference-picker-input input { flex: 1; width: 0; }
+.reference-picker-input select { flex: 1.3; width: 0; }
+.reference-picker-selected { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; min-height: 28px; font-size: 14px; color: var(--muted); }
+.reference-picker-selected .secondary-button { font-size: 14px; padding: 7px 9px; }
+.dex-query-actions, .dex-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; margin: 16px 0; }
+.dex-pagination { justify-content: center; font-size: 14px; color: var(--muted); line-height: 1.8; }
+.discovery-results { margin-top: 25px; min-width: 0; }
+.dex-learning-notice { border-left: 3px solid var(--green); border-radius: 6px; padding: 12px 16px; margin: 15px 0; font-size: 14px; line-height: 1.9; color: var(--muted); background: var(--subtle); }
+.dex-learning-notice.missing { border-color: var(--accent); }
+.discovery-result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 17px; }
+.discovery-result { margin: 0; font-size: 15px; line-height: 1.8; }
+.discovery-pokemon { display: flex; gap: 12px; align-items: center; }
+.discovery-pokemon .pokemon-image { width: 65px; height: 65px; flex-shrink: 0; }
+.discovery-pokemon h3 { font-size: 18px; line-height: 1.8; }
+.discovery-pokemon span { font-size: 13px; color: var(--muted); }
+.discovery-pokemon .type-chip { margin: 5px 5px 0 0; }
+.discovery-learning { display: grid; grid-template-columns: minmax(72px, .65fr) minmax(0, 1.5fr); gap: 12px; padding-top: 10px; margin-top: 9px; border-top: 1px solid var(--border); font-size: 14px; }
+.discovery-learning button, .dex-link { color: var(--green); background: none; border: 0; padding: 0; font: inherit; text-align: left; line-height: 1.8; overflow-wrap: anywhere; }
+.dex-link:hover, .discovery-learning button:hover { text-decoration: underline; }
+.dex-card-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 16px; }
+.dex-compare-add { margin-top: 10px; font-size: 13px; padding: 6px 9px; }
+.dex-tool-tabs { display: flex; gap: 9px; flex-wrap: wrap; margin: 16px 0; }
+.dex-tool-tabs button, .unified-search-kinds button { border: 1px solid var(--border); background: var(--surface); padding: 9px 13px; border-radius: 6px; font-size: 15px; line-height: 1.7; }
+.dex-tool-tabs button.active, .unified-search-kinds button.active { color: var(--green); border-color: var(--green); background: var(--subtle); }
+.dex-table-scroll { max-width: 100%; overflow-x: auto; }
+.dex-comparison-table { width: 100%; min-width: calc(140px + var(--dex-columns, 2) * 210px); border-collapse: collapse; table-layout: fixed; font-size: 15px; line-height: 1.9; }
+.dex-comparison-table th, .dex-comparison-table td { padding: 13px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.dex-comparison-table th:first-child { width: 140px; position: sticky; left: 0; z-index: 1; background: var(--surface); }
+.dex-comparison-table thead th { font-weight: 550; }
+.dex-comparison-table thead .pokemon-image { width: 60px; height: 60px; display: block; }
+.dex-comparison-table small { display: block; color: var(--muted); font-size: 13px; }
+.dex-comparison-table thead .secondary-button { padding: 5px 9px; margin-top: 8px; font-size: 13px; }
+.dex-comparison-table .dex-best { color: var(--green); font-weight: 650; }
+.dex-comparison-table .dex-weak { color: var(--accent); font-weight: 600; }
+.dex-type-list { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dex-loading { display: flex; gap: 9px; align-items: center; justify-content: center; padding: 40px; color: var(--muted); }
+.unified-search-launch { display: flex; align-items: center; gap: 7px; padding: 6px 9px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; white-space: nowrap; }
+.unified-search-launch kbd { color: var(--muted); font-size: 11px; }
+.unified-search-dialog { width: 720px; max-width: 100%; min-width: 0; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 20px 70px #0003; }
+.unified-search-backdrop { grid-template-columns: minmax(0, 1fr); }
+.primary-nav button[aria-label="宝可梦对比"] { gap: 8px; }
+.primary-nav button[aria-label="宝可梦对比"] > span { white-space: nowrap; }
+.primary-nav button[aria-label="宝可梦对比"] > b { padding-left: 4px; padding-right: 4px; }
+.unified-search { display: flex; flex-direction: column; min-width: 0; max-height: calc(100vh - 60px); }
+.unified-search-heading { display: flex; align-items: center; gap: 10px; padding: 15px 18px; font-size: 17px; }
+.unified-search-heading span { margin-left: auto; color: var(--muted); font-size: 13px; }
+.unified-search-input { display: flex; gap: 9px; align-items: center; padding: 12px 14px; margin: 0 16px; border: 1px solid var(--border); border-radius: 7px; background: var(--input); }
+.unified-search-input:focus-within { border-color: var(--green); }
+.unified-search-input > svg { flex-shrink: 0; color: var(--muted); }
+.unified-search-input input { flex: 1; min-width: 0; width: 0; background: transparent; border: 0; color: var(--text); font-size: 16px; padding: 2px 0; }
+.unified-search-input input:focus-visible { outline: none; }
+.unified-search-input .icon-button { padding: 0; }
+.unified-search-kinds { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 16px; }
+.unified-search-kinds button { font-size: 13px; padding: 5px 10px; }
+.unified-search-results { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 12px; }
+.unified-search-group-title { display: flex; justify-content: space-between; align-items: center; gap: 9px; padding: 10px 8px; font-size: 14px; color: var(--muted); }
+.unified-search-group-title button { color: var(--green); font-size: 12px; line-height: 1.8; text-align: right; }
+.unified-search-result { display: flex; width: 100%; gap: 9px; align-items: center; padding: 11px 9px; border-radius: 6px; border: 1px solid transparent; text-align: left; }
+.unified-search-result[data-active=true] { border-color: var(--green); background: var(--subtle); }
+.unified-search-result > span:first-child { flex: 1; min-width: 0; }
+.unified-search-result strong { font-size: 15px; line-height: 1.7; font-weight: 550; overflow-wrap: anywhere; }
+.unified-search-result small { display: block; font-size: 12px; color: var(--muted); line-height: 1.8; overflow-wrap: anywhere; }
+.unified-search-result > svg:last-child { flex-shrink: 0; color: var(--muted); }
+.unified-search-footer { font-size: 12px; color: var(--muted); line-height: 1.8; border-top: 1px solid var(--border); padding: 12px 16px; }
+.dex-search-message { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); padding: 18px 8px; line-height: 1.9; }
+.mini-searchbar { max-height: 65vh; min-height: 0; }
+.mini-unified-search { max-height: 55vh; min-height: 0; }
+.mini-unified-search .unified-search-input { margin: 0; padding: 10px; flex-shrink: 0; }
+.mini-unified-search .unified-search-input input { font-size: 14px; }
+.mini-unified-search .unified-search-kinds { padding: 9px 0; flex-shrink: 0; }
+.mini-unified-search .unified-search-kinds button { padding: 4px 8px; font-size: 12px; }
+.mini-unified-search .unified-search-results { padding: 0; }
+.mini-unified-search .unified-search-group-title { padding: 9px 4px; font-size: 13px; }
+.mini-unified-search .unified-search-result { padding: 8px 5px; }
+.mini-unified-search .unified-search-result .type-chip { font-size: 11px; padding: 3px 6px; }
+.mini-unified-search .dex-pagination { margin: 6px 0; font-size: 12px; flex-shrink: 0; }
+@media (max-width: 800px) { .unified-search-launch kbd { display: none; } }
+@media (max-width: 680px) { .dex-tool-card { padding: 16px; } .unified-search-launch > span { display: none; } .unified-search-backdrop { padding: 12px; } .unified-search { max-height: calc(100vh - 24px); } .unified-search-result .dex-type-list { display: none; } }

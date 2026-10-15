@@ -136,8 +136,8 @@ try {
     const mini = await waiting;
     mini.on('pageerror', error => errors.push(error.message));
     await mini.waitForSelector('.mini-panel');
-    const search = mini.getByRole('textbox', { name: '搜索宝可梦', exact: true });
-    await search.fill('25'); await mini.locator('.mini-results .pokemon-row-main').click();
+    const search = mini.getByRole('combobox', { name: '迷你统一搜索', exact: true });
+    await search.fill('25'); await mini.getByRole('option', { name: '打开宝可梦皮卡丘', exact: true }).click();
     await expect(mini.getByRole('heading', { name: '皮卡丘', exact: true })).toBeVisible();
     await mini.getByRole('button', { name: '收藏当前宝可梦', exact: true }).click();
     await expect.poll(() => page.evaluate(async () => (await window.pokedex.user('get')).favorites.includes(25))).toBe(true);

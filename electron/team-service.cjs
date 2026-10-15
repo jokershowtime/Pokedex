@@ -1,5 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
+const { randomUUID } = require('node:crypto');
 const { createTeamModel, describeFormat, pasteURL, TAGS } = require('./team-model.cjs');
 const { importSets } = require('./strategy-text.cjs');
 const { createTeamLibrary } = require('./team-library.cjs');
@@ -50,8 +51,12 @@ function createTeamService(strategies, directory, fetcher = globalThis.fetch, op
       // can still protect read-only PokéPaste imports from leaving their host.
       const data = await readJSON(fetcher, 'https://pkmn.github.io/smogon/data/teams/' + key + '.json');
       const snapshot = materialize(key, { schemaVersion: 1, key, fetchedAt: new Date().toISOString(), data });
-      fs.writeFileSync(fileFor(key) + '.tmp', JSON.stringify({ schemaVersion: 1, key, fetchedAt: snapshot.fetchedAt, data }), 'utf8');
-      fs.renameSync(fileFor(key) + '.tmp', fileFor(key)); memory.set(key, snapshot); return snapshot;
+      const temporary = fileFor(key) + '.' + randomUUID() + '.tmp';
+      try {
+        fs.writeFileSync(temporary, JSON.stringify({ schemaVersion: 1, key, fetchedAt: snapshot.fetchedAt, data }), 'utf8');
+        fs.renameSync(temporary, fileFor(key));
+      } finally { if (fs.existsSync(temporary)) fs.unlinkSync(temporary); }
+      memory.set(key, snapshot); return snapshot;
     })();
     pending.set(key, operation);
     try { return await operation; } finally { pending.delete(key); }
@@ -69,6 +74,31 @@ function createTeamService(strategies, directory, fetcher = globalThis.fetch, op
     sample: { read, get, index: refresh => get('index', refresh), formats: () => read('index')?.formats || fallbackFormats() } });
   return {
     model, library,
+    compose(args, user, versionId) {
+      if (!args || typeof args !== 'object' || JSON.stringify(args).length > 20000) throw new Error('队伍工作台内容无效或过长。');
+      if (args.id && args.copyFrom) throw new Error('请选择编辑队伍或创建副本。');
+      const existing = args.id ? user.teams.find(team => team.id === args.id) : null;
+      const copied = args.copyFrom ? user.teams.find(team => team.id === args.copyFrom) : null;
+      if (args.id && !existing || args.copyFrom && !copied) throw new Error('这支队伍已被移除，请重新打开工作台。');
+      if (!Array.isArray(args.slots) || args.slots.length > 6) throw new Error('每队最多选择 6 位成员。');
+      const base = existing || copied, rule = describeFormat(args.format);
+      const members = args.slots.filter(slot => slot !== null).map((slot, index) => {
+        if (!slot || typeof slot.id !== 'string' || !['member', 'plan'].includes(slot.kind)) throw new Error('请选择有效的培养方案。');
+        const member = slot.kind === 'member' ? base?.members.find(member => member.id === slot.id) : user.plans.find(plan => plan.id === slot.id);
+        if (!member) throw new Error('第 ' + (index + 1) + ' 位成员的方案已被移除，请重新选择。');
+        return { ...structuredClone(member), originId: member.originId || member.id };
+      });
+      if (new Set(members.map(member => member.id)).size !== members.length) throw new Error('同一套培养方案不能在队伍中重复选择，可选择同物种的另一条路线。');
+      const team = {
+        ...(base ? structuredClone(base) : {}), id: existing?.id || 'workbench-new', title: args.title, notes: args.notes || '',
+        originalName: '', author: base?.author || '', sourceNotes: base?.sourceNotes || '',
+        generation: rule.generation, format: rule.id, formatLabel: rule.label, category: rule.category, members,
+        source: base?.source || { provider: '自组队伍', url: null, fetchedAt: null }, originId: existing?.originId || null,
+        tags: [], personal: true,
+      };
+      if (!existing) { delete team.aliases; delete team.createdAt; delete team.updatedAt; }
+      return model.validate(team, versionId);
+    },
     metadata() {
       return { formats: library.formats(), tags: TAGS.map(({ id, label }) => ({ id, label })), error: null,
         fetchedAt: read('index')?.fetchedAt || null };

@@ -2,6 +2,7 @@ const { DatabaseSync } = require('node:sqlite');
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
 const { pinyin } = require('pinyin-pro');
+const { createDexQueries } = require('./dex-queries.cjs');
 
 const VERSION_NAMES = {
   1: '红／蓝', 2: '皮卡丘', 3: '金／银', 4: '水晶', 5: '红宝石／蓝宝石',
@@ -338,6 +339,7 @@ function createDataService(databasePath, aliasPath = path.join(path.dirname(data
     });
     return strategyReferences;
   }
+  const dexQueries = createDexQueries({ getVersion, catalog, entityList, learnsetVersion, moveAt, matchup, all, machineMap });
   function query(action, args = {}) {
     switch (action) {
       case 'bootstrap': return { manifest, versions, types: typeRecords, generations: GENERATION_NAMES, methods: METHOD_NAMES };
@@ -347,6 +349,9 @@ function createDataService(databasePath, aliasPath = path.join(path.dirname(data
       case 'itemScope': return itemScope(args.versionId);
       case 'entity': return entityDetail(args.kind, args.id, args.versionId);
       case 'matchup': return matchup(args.types, args.versionId);
+      case 'discover': return dexQueries.discover(args);
+      case 'compare': return dexQueries.compare(args);
+      case 'search': return dexQueries.search(args);
       default: throw new Error('不支持的查询。');
     }
   }

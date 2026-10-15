@@ -1,4 +1,5 @@
 const { DEFAULT_VERSIONS } = require('./strategy-model.cjs');
+const { presetList } = require('./assistant-presets.cjs');
 const PROGRESS_KEYS = ['item', 'nature', 'ability', 'evs', 'ivs', 'move0', 'move1', 'move2', 'move3'];
 function createBackupService(data, strategies, teams) {
   function pokemonId(id) { if (!Number.isInteger(id) || !data.hasPokemon(id)) throw new Error('备份包含当前资料未收录的宝可梦编号：' + id); return id; }
@@ -40,7 +41,7 @@ function createBackupService(data, strategies, teams) {
     });
     if (new Set(restoredTeams.map(value => value.id)).size !== restoredTeams.length) throw new Error('备份含重复队伍编号。');
     for (const member of plans) if (member.teamId && !restoredTeams.some(team => team.id === member.teamId && team.members.some(value => value.id === member.id))) throw new Error('备份中的成员所属队伍不存在。');
-    return { favorites, history, notes, plans, teams: restoredTeams };
+    return { favorites, history, notes, plans, teams: restoredTeams, assistantPresets: presetList(saved.assistantPresets) };
   }
   function encode(state) {
     return JSON.stringify({ kind: 'pokedex-user-backup', schemaVersion: 1, exportedAt: new Date().toISOString(), data: state }, null, 2);
@@ -50,7 +51,7 @@ function createBackupService(data, strategies, teams) {
     let document; try { document = JSON.parse(text.replace(/^\uFEFF/, '')); } catch { throw new Error('备份不是有效的 JSON 文件。'); }
     const state = validate(document);
     return { state, summary: { exportedAt: typeof document.exportedAt === 'string' ? document.exportedAt : null,
-      favorites: state.favorites.length, history: state.history.length, notes: Object.keys(state.notes).length, plans: state.plans.length, teams: state.teams.length } };
+      favorites: state.favorites.length, history: state.history.length, notes: Object.keys(state.notes).length, plans: state.plans.length, teams: state.teams.length, assistantPresets: state.assistantPresets.length } };
   }
   return { encode, decode };
 }

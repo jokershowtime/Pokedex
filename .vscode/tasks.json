@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "图鉴：检查前端类型",
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/node_modules/typescript/bin/tsc", "--noEmit"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": ["$tsc"],
+      "presentation": { "reveal": "silent", "panel": "dedicated" }
+    },
+    {
+      "label": "图鉴：准备调试界面",
+      "type": "process",
+      "command": "node",
+      "args": ["${workspaceFolder}/node_modules/vite/bin/vite.js", "build", "--sourcemap"],
+      "dependsOn": ["图鉴：检查前端类型"],
+      "dependsOrder": "sequence",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": ["$tsc"],
+      "presentation": { "reveal": "silent", "panel": "dedicated" }
+    }
+  ]
+}

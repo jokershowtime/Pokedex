@@ -6,6 +6,7 @@ const { STATS, STAT_NAMES, DEFAULT_VERSIONS, vector } = require('./strategy-mode
 const WEATHERS = ['', 'Sun', 'Rain', 'Sand', 'Hail', 'Snow', 'Harsh Sunshine', 'Heavy Rain', 'Strong Winds'];
 const TERRAINS = ['', 'Electric', 'Grassy', 'Psychic', 'Misty'];
 const STAT_KEYS = ['atk', 'def', 'spa', 'spd', 'spe'];
+const UNSUPPORTED_MOVES = ['Counter', 'Mirror Coat', 'Metal Burst', 'Comeuppance', 'Bide', 'Fissure', 'Guillotine', 'Horn Drill', 'Sheer Cold'];
 function integer(value, min, max, label) {
   if (!Number.isInteger(value) || value < min || value > max) throw new Error(label + '应为 ' + min + '～' + max + '。');
   return value;
@@ -231,6 +232,73 @@ function createBattleService(data, strategies, teams) {
       speedOrder: sorted.map(member => member.id), warnings: [...new Set(members.flatMap(member => member.warnings))],
       note: '防御表按常态属性与常见固定免疫／减伤整理，默认特性生效、气球未破；不计其他天气、场地、无视特性和接触招式等特例。打击面按单属性目标和招式基础属性统计，不等于实战能击倒对手。' };
   }
-  return { references: referenceList, draft, stats, damage, analyze };
+  function teamFeatures({ fighter, generation: input }) {
+    const gen = generation(input), common = conditions({}, gen), built = build(fighter, gen);
+    const types = refs.types.filter(type => type.id <= 18 && type.generation <= gen);
+    const attacks = fighter.selection.moves.map(name => {
+      const move = moveFor(name, built);
+      return { name, typeId: model.resolve('types', move.type)?.id || 0, category: move.category, priority: move.priority,
+        effective: move.category === 'Status' ? [] : types.filter(type =>
+          getMoveEffectiveness(built.dex, move, type.english, false, false, false) > 1).map(type => type.id) };
+    });
+    return { ...report(built, gen, common), attacks,
+      defensive: types.map(type => ({ id: type.id, value: defensiveMultiplier(gen, built, type.english, fieldFor(common, built)) })) };
+  }
+  function opponentEvaluator({ opponents, generation: input, category = 'singles', scenario = {} }) {
+    const gen = generation(input), common = conditions({ ...scenario.field, gameType: category === 'doubles' ? 'Doubles' : 'Singles' }, gen);
+    const memo = new Map(), profiles = new Map(); let serial = 0;
+    const profile = fighter => {
+      const p = fighter.pokemon, key = JSON.stringify([p.name, p.level, p.ability, p.item, p.gender, p.rawStats, p.ivs, fighter.selection?.happiness, fighter.state]);
+      if (!profiles.has(key)) { if (profiles.size >= 50000) profiles.clear(); profiles.set(key, ++serial); }
+      return profiles.get(key);
+    };
+    const fixed = ['Seismic Toss', 'Night Shade', 'Dragon Rage', 'Sonic Boom', 'Super Fang', "Nature's Madness", 'Ruination', 'Endeavor', 'Final Gambit'];
+    function effect(attacker, defender, name) {
+      const key = attacker.profile + ':' + defender.profile + ':' + name;
+      if (memo.has(key)) return memo.get(key);
+      let row;
+      try {
+        const move = moveFor(name, attacker);
+        if (move.category === 'Status') return { name, status: true, known: true, multiplier: null };
+        if (UNSUPPORTED_MOVES.includes(name)) return { name, known: false, multiplier: null };
+        const result = calc.calculate(attacker.dex, attacker.pokemon, defender.pokemon, move, fieldFor(common, attacker, defender));
+        const changed = result.move, target = result.defender;
+        const revealed = result.attacker.hasAbility('Scrappy', "Mind's Eye");
+        const ring = target.hasItem('Ring Target') && !target.hasAbility('Klutz');
+        const types = target.teraType && target.teraType !== 'Stellar' ? [target.teraType] : target.types;
+        let value = ['???', 'Stellar'].includes(changed.type) ? 1 : types.reduce((total, type) => total * getMoveEffectiveness(attacker.dex, changed, type, revealed, common.gravity, ring), 1);
+        if (result.field.weather === 'Strong Winds' && types.includes('Flying') && getMoveEffectiveness(attacker.dex, changed, 'Flying', revealed, common.gravity, ring) > 1) value /= 2;
+        if (value === 0 && (changed.named('Thousand Arrows') || changed.hasType('Ground') && target.hasItem('Iron Ball') && !target.hasAbility('Klutz'))) value = 1;
+        if (changed.type === '???' || changed.type === 'Stellar') value = 1;
+        if (value > 0 && target.hasAbility('Tera Shell') && target.curHP() === target.maxHP()) value = .5;
+        const immunities = ['Water Absorb', 'Storm Drain', 'Dry Skin', 'Volt Absorb', 'Lightning Rod', 'Motor Drive', 'Flash Fire', 'Well-Baked Body', 'Sap Sipper', 'Earth Eater', 'Levitate', 'Wonder Guard', 'Soundproof', 'Bulletproof', 'Wind Rider', 'Damp', 'Telepathy'];
+        const maximum = result.range()[1], blocked = maximum === 0 && (value === 0 || immunities.includes(result.rawDesc.defenderAbility) || result.rawDesc.defenderItem === 'Air Balloon');
+        row = maximum > 0 ? { name, known: true, multiplier: fixed.includes(name) ? 1 : value } :
+          blocked ? { name, known: true, multiplier: 0 } : { name, known: false, multiplier: null };
+      } catch { row = { name, known: false, multiplier: null }; }
+      if (memo.size >= 50000) memo.clear(); memo.set(key, row); return row;
+    }
+    const targets = opponents.map(fighter => {
+      const value = { ...build(fighter, gen), selection: fighter.selection };
+      value.profile = profile(value); value.moves = fighter.selection.moves;
+      value.speed = report(value, gen, common).finalSpeed; return value;
+    });
+    return fighter => {
+      const attacker = { ...build(scenario.teamState ? { ...fighter, state: scenario.teamState } : fighter, gen), selection: fighter.selection };
+      attacker.profile = profile(attacker);
+      return targets.map(target => {
+        const attacks = fighter.selection.moves.map(name => effect(attacker, target, name)).filter(row => !row.status);
+        const incoming = target.moves.map(name => effect(target, attacker, name)).filter(row => !row.status);
+        const speedField = fieldFor(common, attacker, target);
+        if (attacker.pokemon.hasAbility('Cloud Nine', 'Air Lock') || target.pokemon.hasAbility('Cloud Nine', 'Air Lock')) speedField.weather = undefined;
+        const speed = report(attacker, gen, common, speedField).finalSpeed;
+        const targetSpeed = getFinalSpeed(target.dex, target.pokemon, speedField, side(target.state));
+        return { attackMoves: attacks.filter(row => row.known && row.multiplier > 1), incoming,
+          resistsAll: incoming.length > 0 && incoming.every(row => row.known && row.multiplier !== null && row.multiplier <= .5),
+          faster: common.trickRoom ? speed < targetSpeed : speed > targetSpeed, speed, targetSpeed, uncertain: [...attacks, ...incoming].some(row => !row.known) };
+      });
+    };
+  }
+  return { references: referenceList, draft, stats, damage, analyze, teamFeatures, opponentEvaluator };
 }
-module.exports = { createBattleService };
+module.exports = { createBattleService, UNSUPPORTED_MOVES };

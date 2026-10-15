@@ -1,4 +1,27 @@
 .team-page { overflow-anchor: none; }
+.team-workbench { width: min(1180px, calc(100vw - 60px)); max-width: calc(100vw - 60px); max-height: calc(100vh - 60px); min-width: 0; overflow: hidden; }
+.team-workbench .builder-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.team-workbench .builder-form-grid > label { min-width: 0; }
+.team-workbench-help { font-size: 14px; line-height: 1.9; color: var(--muted); margin: 16px 0; }
+.workbench-search { margin: 16px 0; }
+.workbench-roster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.workbench-slot { min-width: 0; padding: 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--subtle); }
+.workbench-slot-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; font-size: 15px; }
+.workbench-slot-heading > div { display: flex; gap: 5px; }
+.workbench-slot > select { max-width: 100%; font-size: 14px; }
+.workbench-member { display: flex; align-items: center; gap: 12px; margin-top: 13px; }
+.workbench-member .pokemon-image { width: 72px; height: 72px; flex-shrink: 0; }
+.workbench-member > div { min-width: 0; }
+.workbench-member strong { font-size: 16px; }
+.workbench-member p { font-size: 13px; line-height: 1.85; color: var(--muted); overflow-wrap: anywhere; }
+.workbench-empty { font-size: 14px; color: var(--faint); padding: 16px 0 6px; }
+.workbench-preview { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 20px; }
+.workbench-preview > h3 { font-size: 20px; margin-bottom: 15px; }
+.workbench-preview > p { color: var(--muted); font-size: 15px; line-height: 1.8; display: flex; align-items: center; gap: 8px; }
+.workbench-preview .team-analytics { margin: 0; }
+.team-workbench > footer > span { margin-right: auto; color: var(--muted); font-size: 14px; }
+@media (max-width: 900px) { .workbench-roster { grid-template-columns: 1fr; } }
+@media (max-width: 650px) { .team-workbench .builder-form-grid { grid-template-columns: 1fr; } }
 .cultivation-page { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
 .cultivation-heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 0 0 14px; }
 .cultivation-heading h1 { font-size: 28px; line-height: 1.6; margin: 6px 0; }

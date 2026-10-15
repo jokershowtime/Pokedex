@@ -11,7 +11,7 @@ const GEN_SLUG = { 1: 'rb', 2: 'gs', 3: 'rs', 4: 'dp', 5: 'bw', 6: 'xy', 7: 'sm'
 const STANDARD_FORMAT = /^(?:ubers|ubersuu|ou|uu|ru|nu|pu|zu|lc|nfe|1v1|monotype|doublesou|doublesuu|battlestadiumsingles|battlestadiumdoubles|battlespotsingles|battlespotdoubles|nationaldex|nationaldexdoubles|nationaldexmonotype|nationaldexuu|nationaldexubers|vgc\d{4}[a-z0-9]*)$/;
 
 function formatLabel(tier) {
-  const names = { ubers: '单打 · Uber', ubersuu: '单打 · Uber UU', ou: '单打 · OU', uu: '单打 · UU', ru: '单打 · RU',
+  const names = { free: '自由组队 · 单打', freedoubles: '自由组队 · 双打', ubers: '单打 · Uber', ubersuu: '单打 · Uber UU', ou: '单打 · OU', uu: '单打 · UU', ru: '单打 · RU',
     nu: '单打 · NU', pu: '单打 · PU', zu: '单打 · ZU', lc: '小杯 · LC', nfe: '未完全进化 · NFE', '1v1': '单打 · 1对1',
     monotype: '单属性队伍', doublesou: '双打 · OU', doublesuu: '双打 · UU', battlestadiumsingles: '对战竞技场 · 单打',
     battlestadiumdoubles: '对战竞技场 · 双打', battlespotsingles: '对战点 · 单打', battlespotdoubles: '对战点 · 双打',
