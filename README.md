@@ -4,6 +4,49 @@
 
 本仓库提供应用源码和必要的小型配置文件。为控制仓库体积，图鉴数据库和宝可梦图片不随源码分发；程序图标等必要的小型资源仍包含在仓库中。首次运行桌面应用前，请按下文生成图鉴资料。
 
+## 界面预览
+
+以下截图展示图鉴查询、队伍工具和迷你窗口。工作台截图使用示例培养方案。
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <p><strong>全国图鉴与宝可梦详情</strong></p>
+      <a href="docs/screenshots/pokedex-detail.png"><img src="docs/screenshots/pokedex-detail.png" width="100%" alt="全国图鉴列表与皮卡丘详情" /></a>
+    </td>
+    <td width="50%" align="center">
+      <p><strong>统一搜索</strong></p>
+      <a href="docs/screenshots/unified-search.png"><img src="docs/screenshots/unified-search.png" width="100%" alt="统一搜索中的宝可梦搜索结果" /></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <p><strong>组合反查</strong></p>
+      <a href="docs/screenshots/discovery-results.png"><img src="docs/screenshots/discovery-results.png" width="100%" alt="组合反查结果及招式学习记录" /></a>
+    </td>
+    <td width="50%" align="center">
+      <p><strong>宝可梦对比</strong></p>
+      <a href="docs/screenshots/pokemon-comparison.png"><img src="docs/screenshots/pokemon-comparison.png" width="100%" alt="皮卡丘与雷丘的并排对比" /></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <p><strong>阵容助手</strong></p>
+      <a href="docs/screenshots/team-assistant.png"><img src="docs/screenshots/team-assistant.png" width="100%" alt="阵容助手的队伍搜索条件" /></a>
+    </td>
+    <td width="50%" align="center">
+      <p><strong>队伍工作台</strong></p>
+      <a href="docs/screenshots/team-workbench.png"><img src="docs/screenshots/team-workbench.png" width="100%" alt="队伍工作台中的示例六人培养方案" /></a>
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <p><strong>迷你图鉴固定标签</strong></p>
+      <a href="docs/screenshots/mini-tabs.png"><img src="docs/screenshots/mini-tabs.png" width="49%" alt="迷你图鉴中的皮卡丘和雷之石固定标签" /></a>
+    </td>
+  </tr>
+</table>
+
 ## 功能说明
 
 ### 宝可梦图鉴
